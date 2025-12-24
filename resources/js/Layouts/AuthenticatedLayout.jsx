@@ -230,15 +230,15 @@ export default function AuthenticatedLayout({ user, header, children }) {
                         )}
 
                         {user.permissions && user.permissions.includes('rrhh') && (
-                        <NavLink href={route('rrhh.index')} active={route().current('rrhh.*')}>
+                        <ResponsiveNavLink href={route('rrhh.index')} active={route().current('rrhh.*')}>
                             RRHH
-                        </NavLink>
+                        </ResponsiveNavLink>
                         )}
 
                         {user.permissions && user.permissions.includes('vehicles') && (
-                        <NavLink href={route('vehicles.index')} active={route().current('vehicles.*')}>
+                        <ResponsiveNavLink href={route('vehicles.index')} active={route().current('vehicles.*')}>
                             Flota
-                        </NavLink>
+                        </ResponsiveNavLink>
                         )}
                     </div>
 
