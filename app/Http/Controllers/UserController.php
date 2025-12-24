@@ -28,7 +28,8 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'permissions' => 'array' 
+            'permissions' => 'array',
+            'permissions.*' => 'string|in:dashboard,quotes,projects,clients,users,rrhh,vehicles' 
         ]);
 
         User::create([
@@ -38,7 +39,7 @@ class UserController extends Controller
             'permissions' => $request->permissions ?? [],
         ]);
 
-        return redirect()->route('users.index')->with('success', 'Usuario creado.');
+        return redirect()->route('users.index')->with('success', 'Usuario creado correctamente.');
     }
 
     public function edit(User $user)
@@ -51,7 +52,8 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
-            'permissions' => 'array'
+            'permissions' => 'array',
+            'permissions.*' => 'string|in:dashboard,quotes,projects,clients,users,rrhh,vehicles'
         ]);
 
         $data = [
@@ -69,7 +71,7 @@ class UserController extends Controller
 
         $user->update($data);
 
-        return redirect()->route('users.index')->with('success', 'Usuario actualizado.');
+        return redirect()->route('users.index')->with('success', 'Usuario actualizado correctamente.');
     }
 
     public function destroy(User $user)
@@ -78,6 +80,6 @@ class UserController extends Controller
             return back()->with('error', 'No puedes eliminarte a ti mismo.');
         }
         $user->delete();
-        return back()->with('success', 'Usuario eliminado.');
+        return back()->with('success', 'Usuario eliminado correctamente.');
     }
 }

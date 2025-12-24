@@ -12,6 +12,8 @@ export default function Edit({ auth, user }) {
         { id: 'quotes', label: 'Gestión Comercial (Cotizaciones)' },
         { id: 'projects', label: 'Gestión de Proyectos' },
         { id: 'clients', label: 'Gestión de Clientes' },
+        { id: 'rrhh', label: 'Recursos Humanos (RRHH)' },
+        { id: 'vehicles', label: 'Gestión de Flota (Vehículos)' },
         { id: 'users', label: 'Administrar Usuarios' },
     ];
 
