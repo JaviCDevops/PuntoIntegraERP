@@ -38,45 +38,110 @@ export default function Edit({ auth, client }) {
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <form onSubmit={submit} className="space-y-6">
+                            
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700">RUT</label>
-                                    <input type="text" value={data.rut} onChange={handleRutChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                    <label className="block text-sm font-bold text-gray-700">
+                                        RUT <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={data.rut}
+                                        onChange={handleRutChange}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        required
+                                    />
                                     {errors.rut && <div className="text-red-500 text-xs mt-1">{errors.rut}</div>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700">Razón Social</label>
-                                    <input type="text" value={data.razon_social} onChange={e => setData('razon_social', e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                    <label className="block text-sm font-bold text-gray-700">
+                                        Razón Social <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={data.razon_social}
+                                        onChange={e => setData('razon_social', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        required
+                                    />
                                 </div>
                             </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700">Giro</label>
-                                    <input type="text" value={data.giro} onChange={e => setData('giro', e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                    <label className="block text-sm font-bold text-gray-700">
+                                        Giro <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={data.giro}
+                                        onChange={e => setData('giro', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        required
+                                    />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700">Dirección</label>
-                                    <input type="text" value={data.direccion} onChange={e => setData('direccion', e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                    <label className="block text-sm font-bold text-gray-700">
+                                        Dirección <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={data.direccion}
+                                        onChange={e => setData('direccion', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        required
+                                    />
                                 </div>
                             </div>
+
                             <hr />
+
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700">Nombre Contacto</label>
-                                    <input type="text" value={data.contacto_nombre} onChange={e => setData('contacto_nombre', e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                    <label className="block text-sm font-bold text-gray-700">
+                                        Nombre Contacto <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={data.contacto_nombre}
+                                        onChange={e => setData('contacto_nombre', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        required
+                                    />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700">Teléfono</label>
-                                    <input type="text" value={data.telefono} onChange={e => setData('telefono', e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                    <label className="block text-sm font-bold text-gray-700">
+                                        Teléfono <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={data.telefono}
+                                        onChange={e => setData('telefono', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        required
+                                    />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700">Email</label>
-                                    <input type="email" value={data.contacto_email} onChange={e => setData('contacto_email', e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                    <label className="block text-sm font-bold text-gray-700">
+                                        Email <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="email"
+                                        value={data.contacto_email}
+                                        onChange={e => setData('contacto_email', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        required
+                                    />
                                 </div>
                             </div>
+
                             <div className="flex justify-end space-x-3 pt-4">
-                                <Link href={route('clients.index')} className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Cancelar</Link>
-                                <button type="submit" disabled={processing} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-bold">Actualizar Cliente</button>
+                                <Link href={route('clients.index')} className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">
+                                    Cancelar
+                                </Link>
+                                <button type="submit" disabled={processing} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-bold">
+                                    Actualizar Cliente
+                                </button>
                             </div>
                         </form>
                     </div>

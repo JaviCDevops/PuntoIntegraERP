@@ -8,7 +8,7 @@ const KanbanIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24
 const EditIcon = () => (<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>);
 const NoteIcon = () => (<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>);
 
-export default function Index({ auth, projects, filters }) {
+export default function Index({ auth, projects = [], filters = {} }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentProject, setCurrentProject] = useState(null);
     const [milestoneCount, setMilestoneCount] = useState(1);
@@ -36,22 +36,24 @@ export default function Index({ auth, projects, filters }) {
     }, [searchCode, searchClient, searchStatus]);
 
     const { data, setData, put, processing } = useForm({
-        oc_number: '', internal_notes: '', start_date: '', deadline: '', reminder_date: '', expiration_date: '', milestones: []
+        oc_number: '', internal_notes: '', start_date: '', deadline: '', milestones: []
     });
 
     const openModal = (project) => {
         setCurrentProject(project);
         setMilestoneCount(project.milestones?.length || 1);
+        
+        // Función auxiliar para cortar la hora si viene en formato ISO (2024-01-01T00:00:00)
+        const formatDate = (dateStr) => dateStr ? dateStr.substring(0, 10) : '';
+
         setData({
             oc_number: project.oc_number || '',
             internal_notes: project.internal_notes || '',
-            start_date: project.start_date || '',
-            deadline: project.deadline || '',
-            reminder_date: project.reminder_date || '',
-            expiration_date: project.expiration_date || '',
+            start_date: formatDate(project.start_date),
+            deadline: formatDate(project.deadline),
             milestones: project.milestones?.length > 0 
                 ? project.milestones 
-                : [{ milestone_order: 1, percentage: 100, amount: project.quote.total_value, invoice_number: '', status: 'PENDIENTE' }]
+                : [{ milestone_order: 1, percentage: 100, amount: project.quote?.total_value || 0, invoice_number: '', status: 'PENDIENTE' }]
         });
         setIsModalOpen(true);
     };
@@ -67,7 +69,7 @@ export default function Index({ auth, projects, filters }) {
     };
 
     const getProjectsByStatus = (status) => {
-        return projects.filter(p => (p.status || 'activo') === status);
+        return (projects || []).filter(p => (p.status || 'activo') === status);
     };
 
     const handleMilestoneCountChange = (e) => {
@@ -80,7 +82,7 @@ export default function Index({ auth, projects, filters }) {
     const updateMilestone = (index, field, value) => {
         const newMilestones = [...data.milestones];
         newMilestones[index][field] = value;
-        const totalProjectValue = parseFloat(currentProject.quote.total_value);
+        const totalProjectValue = parseFloat(currentProject?.quote?.total_value || 0);
         if (field === 'percentage') newMilestones[index]['amount'] = (totalProjectValue * (value / 100)).toFixed(2);
         else if (field === 'amount') newMilestones[index]['percentage'] = ((value / totalProjectValue) * 100).toFixed(2);
         setData('milestones', newMilestones);
@@ -130,6 +132,7 @@ export default function Index({ auth, projects, filters }) {
                 <div className="max-w-[98%] mx-auto">
                     
                     <div className="bg-gray-100 p-4 rounded-t-lg border-b border-gray-200 flex flex-wrap gap-4 items-end mb-4 shadow-sm">
+                        {/* Filtros */}
                         <div>
                             <label className="text-xs font-bold text-gray-500 uppercase"># Código:</label>
                             <input type="text" placeholder="Ej: 2024..." className="w-40 text-sm border-gray-300 rounded block" value={searchCode} onChange={e => setSearchCode(e.target.value)} />
@@ -148,7 +151,7 @@ export default function Index({ auth, projects, filters }) {
                             </select>
                         </div>
                         <div className="flex-1 text-right self-center">
-                            <span className="text-blue-600 font-bold text-sm">Resultados: {projects.length}</span>
+                            <span className="text-blue-600 font-bold text-sm">Resultados: {(projects || []).length}</span>
                         </div>
                     </div>
 
@@ -166,7 +169,7 @@ export default function Index({ auth, projects, filters }) {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {projects.map((project) => (
+                                    {(projects || []).map((project) => (
                                         <tr key={project.id} className="hover:bg-blue-50 transition">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                                                 <div className="text-blue-600">{project.code}</div>
@@ -256,7 +259,7 @@ export default function Index({ auth, projects, filters }) {
 
                                                                     <div className="flex justify-between items-start mb-2">
                                                                         <h4 className="font-bold text-sm text-gray-800 leading-tight pr-6">
-                                                                            {project.quote?.client_snapshot?.razon_social || project.client?.razon_social}
+                                                                            {project.quote?.client_snapshot?.razon_social || project.client?.razon_social || 'Desconocido'}
                                                                         </h4>
                                                                         <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
                                                                             {project.code}
@@ -310,29 +313,70 @@ export default function Index({ auth, projects, filters }) {
                             <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-xl">✖</button>
                         </div>
                         <div className="bg-gray-100 p-3 rounded mb-6 flex space-x-6 text-sm">
-                            <div><span className="font-bold">Cliente:</span> {currentProject.quote?.client_snapshot?.razon_social}</div>
+                            <div><span className="font-bold">Cliente:</span> {currentProject.quote?.client_snapshot?.razon_social || 'Desconocido'}</div>
                             <div><span className="font-bold">Monto Total:</span> {parseFloat(currentProject.quote?.total_value || 0).toLocaleString()} UF</div>
                         </div>
+                        
                         <form onSubmit={submit}>
                             <div className="mb-4 bg-yellow-50 p-4 rounded border border-yellow-200">
-                                <label className="block text-sm font-bold text-gray-700 mb-1">N° Orden de Compra (OC)</label>
-                                <input type="text" value={data.oc_number} onChange={e => setData('oc_number', e.target.value)} placeholder="Ej: 5022-CM25" className="w-full text-sm rounded border-gray-300" />
+                                <label className="block text-sm font-bold text-gray-700 mb-1">
+                                    N° Orden de Compra (OC) <span className="text-red-500">*</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    required 
+                                    value={data.oc_number} 
+                                    onChange={e => setData('oc_number', e.target.value)} 
+                                    placeholder="Ej: 5022-CM25" 
+                                    // Bloquear si ya existe un número guardado en la BD
+                                    disabled={!!currentProject.oc_number}
+                                    className={`w-full text-sm rounded border-gray-300 ${currentProject.oc_number ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+                                />
                             </div>
+                            
                             <div className="border border-blue-200 rounded-lg p-4 bg-blue-50 mb-6">
-                                <h4 className="font-bold text-blue-800 mb-3 text-sm">Configuración de Plazos y Alertas</h4>
-                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                    <div><label className="block text-xs font-bold text-gray-700 mb-1">Inicio Proyecto:</label><input type="date" value={data.start_date} onChange={e => setData('start_date', e.target.value)} className="w-full text-sm rounded border-gray-300" /></div>
-                                    <div><label className="block text-xs font-bold text-gray-700 mb-1">Entrega Final:</label><input type="date" value={data.deadline} onChange={e => setData('deadline', e.target.value)} className="w-full text-sm rounded border-gray-300" /></div>
-                                </div>
+                                <h4 className="font-bold text-blue-800 mb-3 text-sm">Plazos del Proyecto</h4>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div><label className="block text-xs font-bold text-pink-600 mb-1">Recordatorio:</label><input type="date" value={data.reminder_date} onChange={e => setData('reminder_date', e.target.value)} className="w-full text-sm rounded border-pink-300 focus:border-pink-500 focus:ring-pink-500" /><p className="text-[10px] text-gray-500 mt-1">Te avisará en la campana este día.</p></div>
-                                    <div><label className="block text-xs font-bold text-red-600 mb-1">Perdido (Expiración):</label><input type="date" value={data.expiration_date} onChange={e => setData('expiration_date', e.target.value)} className="w-full text-sm rounded border-red-300 focus:border-red-500 focus:ring-red-500" /><p className="text-[10px] text-gray-500 mt-1">Si llega este día y no se adjudica, pasa a PERDIDO.</p></div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-700 mb-1">
+                                            Inicio Proyecto: <span className="text-red-500">*</span>
+                                        </label>
+                                        <input 
+                                            type="date" 
+                                            required 
+                                            // CORRECCIÓN: Aseguramos el formato YYYY-MM-DD cortando la cadena
+                                            value={data.start_date ? data.start_date.substring(0, 10) : ''} 
+                                            onChange={e => setData('start_date', e.target.value)} 
+                                            // Bloquear si ya existe fecha guardada en el proyecto original
+                                            // CÓDIGO DE PRUEBA (Nunca bloquea)
+                                            disabled={false}
+                                            className={`w-full text-sm rounded border-gray-300 ${currentProject.start_date ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-700 mb-1">
+                                            Entrega Final: <span className="text-red-500">*</span>
+                                        </label>
+                                        <input 
+                                            type="date" 
+                                            required 
+                                            // CORRECCIÓN: Aseguramos el formato YYYY-MM-DD cortando la cadena
+                                            value={data.deadline ? data.deadline.substring(0, 10) : ''} 
+                                            onChange={e => setData('deadline', e.target.value)} 
+                                            // Bloquear si ya existe fecha guardada en el proyecto original
+                                            // CÓDIGO DE PRUEBA (Nunca bloquea)
+                                            disabled={false}
+                                            className={`w-full text-sm rounded border-gray-300 ${currentProject.deadline ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+                                        />
+                                    </div>
                                 </div>
                             </div>
+
                             <div className="mb-6">
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Notas / Comentarios Internos</label>
                                 <textarea rows="3" value={data.internal_notes} onChange={e => setData('internal_notes', e.target.value)} placeholder="Agrega detalles importantes sobre el proyecto..." className="w-full text-sm rounded border-gray-300"></textarea>
                             </div>
+                            
                             <div className="mb-6 border-t pt-4">
                                 <div className="flex items-center space-x-3 mb-4">
                                     <label className="text-sm font-bold text-gray-700">Cantidad de Pagos (Hitos):</label>
@@ -343,10 +387,54 @@ export default function Index({ auth, projects, filters }) {
                                     {data.milestones.map((ms, index) => (
                                         <div key={index} className="flex items-end space-x-2 bg-gray-50 p-2 rounded border border-gray-200">
                                             <div className="w-16 font-bold text-blue-500 text-sm pb-2">Pago {index + 1}</div>
-                                            <div className="w-20"><label className="block text-xs text-gray-500 mb-1">%</label><input type="number" value={ms.percentage} onChange={e => updateMilestone(index, 'percentage', e.target.value)} className="w-full text-sm border-gray-300 rounded" /></div>
-                                            <div className="flex-1"><label className="block text-xs text-gray-500 mb-1">Monto (UF)</label><input type="number" step="0.01" value={ms.amount} onChange={e => updateMilestone(index, 'amount', e.target.value)} className="w-full text-sm border-gray-300 rounded" /></div>
-                                            <div className="flex-1"><label className="block text-xs text-gray-500 mb-1">N° Factura</label><input type="text" placeholder="Pendiente..." value={ms.invoice_number || ''} onChange={e => updateMilestone(index, 'invoice_number', e.target.value)} className="w-full text-sm border-gray-300 rounded" /></div>
-                                            <div className="w-32"><label className="block text-xs text-gray-500 mb-1">Estado</label><select value={ms.status} onChange={e => updateMilestone(index, 'status', e.target.value)} className="w-full text-sm border-gray-300 rounded p-2"><option value="PENDIENTE">PENDIENTE</option><option value="FACTURADO">FACTURADO</option><option value="PAGADO">PAGADO</option></select></div>
+                                            
+                                            <div className="w-20">
+                                                <label className="block text-xs text-gray-500 mb-1">% <span className="text-red-500">*</span></label>
+                                                <input 
+                                                    type="number" 
+                                                    required 
+                                                    value={ms.percentage} 
+                                                    onChange={e => updateMilestone(index, 'percentage', e.target.value)} 
+                                                    className="w-full text-sm border-gray-300 rounded" 
+                                                />
+                                            </div>
+                                            
+                                            <div className="flex-1">
+                                                <label className="block text-xs text-gray-500 mb-1">Monto (UF) <span className="text-red-500">*</span></label>
+                                                <input 
+                                                    type="number" 
+                                                    required 
+                                                    step="0.01" 
+                                                    value={ms.amount} 
+                                                    onChange={e => updateMilestone(index, 'amount', e.target.value)} 
+                                                    className="w-full text-sm border-gray-300 rounded" 
+                                                />
+                                            </div>
+                                            
+                                            <div className="flex-1">
+                                                <label className="block text-xs text-gray-500 mb-1">N° Factura</label>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Pendiente..." 
+                                                    value={ms.invoice_number || ''} 
+                                                    onChange={e => updateMilestone(index, 'invoice_number', e.target.value)} 
+                                                    className="w-full text-sm border-gray-300 rounded" 
+                                                />
+                                            </div>
+                                            
+                                            <div className="w-32">
+                                                <label className="block text-xs text-gray-500 mb-1">Estado <span className="text-red-500">*</span></label>
+                                                <select 
+                                                    required 
+                                                    value={ms.status} 
+                                                    onChange={e => updateMilestone(index, 'status', e.target.value)} 
+                                                    className="w-full text-sm border-gray-300 rounded p-2"
+                                                >
+                                                    <option value="PENDIENTE">PENDIENTE</option>
+                                                    <option value="FACTURADO">FACTURADO</option>
+                                                    <option value="PAGADO">PAGADO</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

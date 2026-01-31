@@ -45,7 +45,9 @@ export default function Create({ auth }) {
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700">RUT (Sin puntos)</label>
+                                    <label className="block text-sm font-bold text-gray-700">
+                                        RUT (Sin puntos) <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         placeholder="12345678-9"
@@ -53,16 +55,20 @@ export default function Create({ auth }) {
                                         value={data.rut}
                                         onChange={handleRutChange}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        required
                                     />
                                     {errors.rut && <div className="text-red-500 text-xs mt-1">{errors.rut}</div>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700">Razón Social</label>
+                                    <label className="block text-sm font-bold text-gray-700">
+                                        Razón Social <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={data.razon_social}
                                         onChange={e => setData('razon_social', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        required
                                     />
                                     {errors.razon_social && <div className="text-red-500 text-xs mt-1">{errors.razon_social}</div>}
                                 </div>
@@ -70,22 +76,28 @@ export default function Create({ auth }) {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700">Giro</label>
+                                    <label className="block text-sm font-bold text-gray-700">
+                                        Giro <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={data.giro}
                                         onChange={e => setData('giro', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        required
                                     />
                                     {errors.giro && <div className="text-red-500 text-xs mt-1">{errors.giro}</div>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700">Dirección Comercial</label>
+                                    <label className="block text-sm font-bold text-gray-700">
+                                        Dirección Comercial <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={data.direccion}
                                         onChange={e => setData('direccion', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        required
                                     />
                                     {errors.direccion && <div className="text-red-500 text-xs mt-1">{errors.direccion}</div>}
                                 </div>
@@ -95,32 +107,41 @@ export default function Create({ auth }) {
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700">Nombre Contacto</label>
+                                    <label className="block text-sm font-bold text-gray-700">
+                                        Nombre Contacto <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={data.contacto_nombre}
                                         onChange={e => setData('contacto_nombre', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        required
                                     />
                                     {errors.contacto_nombre && <div className="text-red-500 text-xs mt-1">{errors.contacto_nombre}</div>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700">Teléfono</label>
+                                    <label className="block text-sm font-bold text-gray-700">
+                                        Teléfono <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         value={data.telefono}
                                         onChange={e => setData('telefono', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        required
                                     />
                                     {errors.telefono && <div className="text-red-500 text-xs mt-1">{errors.telefono}</div>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700">Email</label>
+                                    <label className="block text-sm font-bold text-gray-700">
+                                        Email <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="email"
                                         value={data.contacto_email}
                                         onChange={e => setData('contacto_email', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                        required
                                     />
                                     {errors.contacto_email && <div className="text-red-500 text-xs mt-1">{errors.contacto_email}</div>}
                                 </div>
@@ -131,7 +152,7 @@ export default function Create({ auth }) {
                                     Cancelar
                                 </Link>
                                 <button type="submit" disabled={processing} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-bold">
-                                    Guardar Cliente
+                                    {processing ? 'Guardando...' : 'Guardar Cliente'}
                                 </button>
                             </div>
                         </form>

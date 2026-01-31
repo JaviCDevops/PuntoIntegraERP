@@ -1,12 +1,15 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, Link } from '@inertiajs/react';
 
-export default function Create({ auth, users }) {
+// 1. AÑADIMOS " = []" PARA EVITAR EL ERROR "UNDEFINED READING MAP"
+export default function Create({ auth, users = [] }) {
+    
     const { data, setData, post, processing } = useForm({
-        title: '', description: '',
+        title: '', 
+        description: '',
         columns: [{ name: 'Pendiente', color: '#fca5a5' }, { name: 'En Proceso', color: '#fcd34d' }, { name: 'Terminado', color: '#86efac' }],
         rows: [{ name: 'General', color: '#3b82f6' }],
-        members: []
+        user_ids: [] // 2. CAMBIADO DE 'members' A 'user_ids' PARA COINCIDIR CON EL CONTROLLER
     });
 
     const addCol = () => setData('columns', [...data.columns, { name: 'Nueva Columna', color: '#cbd5e1' }]);
@@ -26,8 +29,12 @@ export default function Create({ auth, users }) {
     };
 
     const handleMember = (id) => {
-        if(data.members.includes(id)) setData('members', data.members.filter(m => m !== id));
-        else setData('members', [...data.members, id]);
+        // Usamos user_ids en lugar de members
+        if(data.user_ids.includes(id)) {
+            setData('user_ids', data.user_ids.filter(m => m !== id));
+        } else {
+            setData('user_ids', [...data.user_ids, id]);
+        }
     }
 
     const submit = (e) => { e.preventDefault(); post(route('boards.store')); };
@@ -41,12 +48,27 @@ export default function Create({ auth, users }) {
                     <div className="bg-gray-800 p-6 rounded-lg shadow text-white">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-bold mb-1">Título</label>
-                                <input type="text" value={data.title} onChange={e=>setData('title', e.target.value)} className="w-full rounded text-black" required />
+                                <label className="block text-sm font-bold mb-1">
+                                    Título <span className="text-red-500">*</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    value={data.title} 
+                                    onChange={e=>setData('title', e.target.value)} 
+                                    className="w-full rounded text-black" 
+                                    required 
+                                    placeholder="Ej: Planificación 2025"
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold mb-1">Descripción</label>
-                                <input type="text" value={data.description} onChange={e=>setData('description', e.target.value)} className="w-full rounded text-black" />
+                                <input 
+                                    type="text" 
+                                    value={data.description} 
+                                    onChange={e=>setData('description', e.target.value)} 
+                                    className="w-full rounded text-black" 
+                                    placeholder="Opcional..."
+                                />
                             </div>
                         </div>
                     </div>
@@ -57,7 +79,14 @@ export default function Create({ auth, users }) {
                             {data.columns.map((col, i) => (
                                 <div key={i} className="flex gap-2 mb-2">
                                     <span className="py-2 text-gray-400 font-bold w-4">{i+1}</span>
-                                    <input type="text" value={col.name} onChange={e=>updateCol(i, 'name', e.target.value)} className="flex-1 rounded border-gray-300 h-9 text-sm" />
+                                    <input 
+                                        type="text" 
+                                        value={col.name} 
+                                        onChange={e=>updateCol(i, 'name', e.target.value)} 
+                                        className="flex-1 rounded border-gray-300 h-9 text-sm" 
+                                        required
+                                        placeholder="Nombre columna"
+                                    />
                                     <input type="color" value={col.color} onChange={e=>updateCol(i, 'color', e.target.value)} className="h-9 w-9 p-0 border-0 rounded cursor-pointer" />
                                     <button type="button" onClick={() => removeCol(i)} className="text-red-500 font-bold px-2">✖</button>
                                 </div>
@@ -70,7 +99,14 @@ export default function Create({ auth, users }) {
                             {data.rows.map((row, i) => (
                                 <div key={i} className="flex gap-2 mb-2">
                                     <span className="py-2 text-gray-400 font-bold w-4">{i+1}</span>
-                                    <input type="text" value={row.name} onChange={e=>updateRow(i, 'name', e.target.value)} className="flex-1 rounded border-gray-300 h-9 text-sm" />
+                                    <input 
+                                        type="text" 
+                                        value={row.name} 
+                                        onChange={e=>updateRow(i, 'name', e.target.value)} 
+                                        className="flex-1 rounded border-gray-300 h-9 text-sm" 
+                                        required
+                                        placeholder="Nombre fila"
+                                    />
                                     <button type="button" onClick={() => removeRow(i)} className="text-red-500 font-bold px-2">✖</button>
                                 </div>
                             ))}
@@ -81,19 +117,26 @@ export default function Create({ auth, users }) {
                     <div className="bg-gray-800 p-6 rounded-lg shadow text-white">
                         <label className="block text-sm font-bold mb-2">Asignar Miembros:</label>
                         <div className="flex flex-wrap gap-2">
-                            {users.map(u => (
+                            {/* 3. USAMOS EL MAP CON SEGURIDAD (users?) */}
+                            {users?.map(u => (
                                 <button 
                                     key={u.id} type="button" 
                                     onClick={() => handleMember(u.id)}
-                                    className={`px-3 py-1 rounded-full text-sm border ${data.members.includes(u.id) ? 'bg-blue-500 border-blue-500' : 'border-gray-500 hover:bg-gray-700'}`}
+                                    // Verificamos si el ID está en user_ids para pintarlo azul
+                                    className={`px-3 py-1 rounded-full text-sm border transition ${data.user_ids.includes(u.id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-500 text-gray-300 hover:bg-gray-700'}`}
                                 >
                                     {u.name}
                                 </button>
                             ))}
+                            {(!users || users.length === 0) && (
+                                <span className="text-gray-400 italic text-sm">No hay otros usuarios registrados.</span>
+                            )}
                         </div>
                     </div>
 
-                    <button type="submit" disabled={processing} className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold text-lg shadow hover:bg-blue-700">Guardar Tablero Completo</button>
+                    <button type="submit" disabled={processing} className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold text-lg shadow hover:bg-blue-700 transition">
+                        {processing ? 'Guardando...' : 'Guardar Tablero Completo'}
+                    </button>
                 </form>
             </div>
         </AuthenticatedLayout>

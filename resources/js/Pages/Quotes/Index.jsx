@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
+// --- ICONOS ---
 const EyeIcon = ({ off }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
         {off ? <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" /> : <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />}
@@ -11,12 +12,46 @@ const EyeIcon = ({ off }) => (
 const TrashIcon = () => (<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>);
 const EditIcon = () => (<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>);
 const PdfIcon = () => (<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>);
-const NoteIcon = () => (<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>);
+const ClockIcon = () => (<svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>);
 
 export default function Index({ auth, quotes, filters }) {
     const [viewMode, setViewMode] = useState('lista'); 
     const [valuesVisible, setValuesVisible] = useState(false);
 
+    // --- ESTADOS DE FILTROS ---
+    const [searchCode, setSearchCode] = useState(filters.search_code || '');
+    const [searchClient, setSearchClient] = useState(filters.search_client || '');
+    const [searchStatus, setSearchStatus] = useState(filters.search_status || 'todos');
+    const [hideLost, setHideLost] = useState(filters.hide_lost === 'true');
+    const [hideWon, setHideWon] = useState(filters.hide_won === 'true');
+
+    // Definición de columnas Kanban
+    const kanbanColumns = {
+        pendiente: { title: 'Pendiente', color: 'border-orange-500', bg: 'bg-gray-100' },
+        enviada: { title: 'Enviada', color: 'border-emerald-500', bg: 'bg-emerald-50' },
+        adjudicada: { title: 'Adjudicado', color: 'border-blue-500', bg: 'bg-blue-50' },
+        perdida: { title: 'Perdido', color: 'border-red-500', bg: 'bg-red-50' }
+    };
+
+    // --- EFECTO DE RECARGA (DEBOUNCE) ---
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            router.get(
+                route('quotes.index'),
+                { 
+                    search_code: searchCode, 
+                    search_client: searchClient, 
+                    search_status: searchStatus, 
+                    hide_lost: hideLost,
+                    hide_won: hideWon
+                },
+                { preserveState: true, replace: true }
+            );
+        }, 300);
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchCode, searchClient, searchStatus, hideLost, hideWon]);
+
+    // --- MANEJADORES DE ACCIÓN ---
     const handleDelete = (id) => {
         if (confirm('¿Estás seguro de eliminar esta cotización?')) {
             router.delete(route('quotes.destroy', id), {
@@ -25,39 +60,6 @@ export default function Index({ auth, quotes, filters }) {
             });
         }
     };
-
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'adjudicada': return 'bg-blue-100 text-blue-800 border-blue-300 focus:ring-blue-500';
-            case 'pendiente': return 'bg-orange-100 text-orange-800 border-orange-300 focus:ring-orange-500';
-            case 'enviada': return 'bg-emerald-100 text-emerald-800 border-emerald-300 focus:ring-emerald-500';
-            case 'perdida': return 'bg-red-100 text-red-800 border-red-300 focus:ring-red-500';
-            default: return 'bg-gray-100 text-gray-800 border-gray-300';
-        }
-    };
-    
-    const [searchCode, setSearchCode] = useState(filters.search_code || '');
-    const [searchClient, setSearchClient] = useState(filters.search_client || '');
-    const [searchStatus, setSearchStatus] = useState(filters.search_status || 'todos');
-    const [hideLost, setHideLost] = useState(filters.hide_lost === 'true');
-
-    const kanbanColumns = {
-        pendiente: { title: 'Pendiente', color: 'border-orange-500', bg: 'bg-gray-100' },
-        enviada: { title: 'Enviada', color: 'border-emerald-500', bg: 'bg-emerald-50' },
-        adjudicada: { title: 'Adjudicado', color: 'border-blue-500', bg: 'bg-blue-50' },
-        perdida: { title: 'Perdido', color: 'border-red-500', bg: 'bg-red-50' }
-    };
-
-    useEffect(() => {
-        const delayDebounceFn = setTimeout(() => {
-            router.get(
-                route('quotes.index'),
-                { search_code: searchCode, search_client: searchClient, search_status: searchStatus, hide_lost: hideLost },
-                { preserveState: true, replace: true }
-            );
-        }, 300);
-        return () => clearTimeout(delayDebounceFn);
-    }, [searchCode, searchClient, searchStatus, hideLost]);
 
     const handleStatusChange = (id, newStatus) => {
         if (newStatus === 'adjudicada') {
@@ -74,9 +76,36 @@ export default function Index({ auth, quotes, filters }) {
         }
     };
 
+    // --- HELPERS VISUALES ---
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'adjudicada': return 'bg-blue-100 text-blue-800 border-blue-300 focus:ring-blue-500';
+            case 'pendiente': return 'bg-orange-100 text-orange-800 border-orange-300 focus:ring-orange-500';
+            case 'enviada': return 'bg-emerald-100 text-emerald-800 border-emerald-300 focus:ring-emerald-500';
+            case 'perdida': return 'bg-red-100 text-red-800 border-red-300 focus:ring-red-500';
+            default: return 'bg-gray-100 text-gray-800 border-gray-300';
+        }
+    };
+    
     const getQuotesByStatus = (status) => quotes.filter(q => q.status === status);
     const formatMoney = (amount, symbol = '$') => valuesVisible ? `${symbol} ${parseFloat(amount).toLocaleString('es-CL')}` : '***';
-    const formatDate = (dateString) => new Date(dateString).toLocaleDateString('es-CL');
+    
+    // --- FORMATO DE FECHA CORREGIDO (Día/Mes/Año) ---
+    const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        // Usamos UTC para evitar problemas de zona horaria y asegurar el orden DD/MM/AAAA
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const year = date.getUTCFullYear();
+        return `${day}/${month}/${year}`;
+    };
+    
+    const isExpired = (dateString) => {
+        if (!dateString) return false;
+        // Comparamos fecha cruda para lógica, pero mostramos formateada
+        return new Date(dateString) < new Date().setHours(0,0,0,0);
+    };
 
     return (
         <AuthenticatedLayout
@@ -117,15 +146,28 @@ export default function Index({ auth, quotes, filters }) {
             <div className="py-8">
                 <div className="max-w-[95%] mx-auto">
                     
+                    {/* --- BARRA DE FILTROS --- */}
                     <div className="bg-gray-100 p-4 rounded-t-lg border-b border-gray-200 flex flex-wrap gap-4 items-end mb-4 shadow-sm">
+                        
+                        {/* Filtro Código */}
                         <div>
                             <label className="text-xs font-bold text-gray-500 uppercase"># Código:</label>
                             <input type="text" placeholder="Ej: 2025_01..." className="w-40 text-sm border-gray-300 rounded block" value={searchCode} onChange={e => setSearchCode(e.target.value)} />
                         </div>
+                        
+                        {/* Filtro Cliente (Expandido) */}
                         <div className="flex-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase">Filtro Cliente:</label>
-                            <input type="text" placeholder="Buscar cliente..." className="w-full text-sm border-gray-300 rounded block" value={searchClient} onChange={e => setSearchClient(e.target.value)} />
+                            <label className="text-xs font-bold text-gray-500 uppercase">Filtro Cliente / Detalle:</label>
+                            <input 
+                                type="text" 
+                                placeholder="Buscar cliente o descripción..." 
+                                className="w-full text-sm border-gray-300 rounded block" 
+                                value={searchClient} 
+                                onChange={e => setSearchClient(e.target.value)} 
+                            />
                         </div>
+                        
+                        {/* Filtro Estado */}
                         <div>
                             <label className="text-xs font-bold text-gray-500 uppercase">Estado:</label>
                             <select className="w-40 text-sm border-gray-300 rounded block" value={searchStatus} onChange={e => setSearchStatus(e.target.value)}>
@@ -136,16 +178,27 @@ export default function Index({ auth, quotes, filters }) {
                                 <option value="perdida">Perdida</option>
                             </select>
                         </div>
+                        
+                        {/* Botón Ocultar Perdidas */}
                         <div>
                             <button onClick={() => setHideLost(!hideLost)} className={`text-sm font-bold py-2 px-4 rounded border transition ${hideLost ? 'bg-red-500 text-white border-red-600' : 'bg-white text-gray-600 border-gray-300'}`}>
-                                {hideLost ? 'Ocultar perdidos' : 'Ver perdidos'}
+                                {hideLost ? 'Ver perdidos' : 'Ocultar perdidos'}
                             </button>
                         </div>
+
+                        {/* Botón Ocultar Adjudicadas (NUEVO) */}
+                        <div>
+                            <button onClick={() => setHideWon(!hideWon)} className={`text-sm font-bold py-2 px-4 rounded border transition ${hideWon ? 'bg-blue-500 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300'}`}>
+                                {hideWon ? 'Ver adjudicadas' : 'Ocultar adjudicadas'}
+                            </button>
+                        </div>
+
                         <div className="flex-1 text-right self-center">
                             <span className="text-blue-600 font-bold text-sm">Resultados: {quotes.length}</span>
                         </div>
                     </div>
 
+                    {/* --- VISTA DE LISTA --- */}
                     {viewMode === 'lista' && (
                         <div className="bg-white shadow rounded-lg overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
@@ -155,7 +208,7 @@ export default function Index({ auth, quotes, filters }) {
                                         <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Area</th>
                                         <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Cliente</th>
                                         <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Detalle</th>
-                                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Notas</th>
+                                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Vencimiento</th>
                                         <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase">Neto (UF)</th>
                                         <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase">Total (UF)</th>
                                         <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">Estado</th>
@@ -169,8 +222,12 @@ export default function Index({ auth, quotes, filters }) {
                                             <td className="px-4 py-4 text-sm text-gray-600">{quote.area || 'Ingeniería'}</td>
                                             <td className="px-4 py-4 text-sm text-gray-800 font-medium">{quote.client.razon_social}</td>
                                             <td className="px-4 py-4 text-sm text-gray-500 truncate max-w-xs">{quote.description}</td>
-                                            <td className="px-4 py-4 text-sm text-gray-500">
-                                                {quote.internal_notes && <span title={quote.internal_notes} className="cursor-help text-yellow-600"><NoteIcon /></span>}
+                                            <td className="px-4 py-4 text-sm">
+                                                {quote.valid_until ? (
+                                                    <span className={`text-xs font-bold ${isExpired(quote.valid_until) ? 'text-red-500' : 'text-gray-500'}`}>
+                                                        {formatDate(quote.valid_until)}
+                                                    </span>
+                                                ) : <span className="text-xs text-gray-300">-</span>}
                                             </td>
                                             <td className="px-4 py-4 text-right text-sm text-gray-400 font-mono">{formatMoney(quote.net_value, 'UF')}</td>
                                             <td className="px-4 py-4 text-right text-sm text-gray-400 font-mono">{formatMoney(quote.total_value, 'UF')}</td>
@@ -191,7 +248,6 @@ export default function Index({ auth, quotes, filters }) {
                                             </td>
 
                                             <td className="px-4 py-4 text-center flex justify-center space-x-2">
-                                                                                
                                                 {(quote.status === 'pendiente' || quote.status === 'enviada') && (
                                                     <Link 
                                                         href={route('quotes.edit', quote.id)}
@@ -201,7 +257,7 @@ export default function Index({ auth, quotes, filters }) {
                                                         <EditIcon />
                                                     </Link>
                                                 )}
-                                            
+                                                
                                                 <a href={route('quotes.pdf', quote.id)} target="_blank" className="bg-sky-500 text-white p-1.5 rounded shadow" title="Descargar PDF">
                                                     <PdfIcon />
                                                 </a>
@@ -221,12 +277,19 @@ export default function Index({ auth, quotes, filters }) {
                         </div>
                     )}
 
+                    {/* --- VISTA KANBAN --- */}
                     {viewMode === 'kanban' && (
                         <DragDropContext onDragEnd={onDragEnd}>
-                            <div className={`grid grid-cols-1 gap-4 h-full ${hideLost ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
+                            {/* Grid adaptativo según los filtros activados */}
+                            <div className={`grid grid-cols-1 gap-4 h-full 
+                                ${hideLost && hideWon ? 'md:grid-cols-2' : 
+                                  hideLost || hideWon ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
 
                                 {Object.entries(kanbanColumns)
+                                    // Filtramos la columna 'perdida' si hideLost es true
                                     .filter(([columnId]) => !(hideLost && columnId === 'perdida')) 
+                                    // Filtramos la columna 'adjudicada' si hideWon es true
+                                    .filter(([columnId]) => !(hideWon && columnId === 'adjudicada'))
                                     .map(([columnId, columnDef]) => (
                                     
                                     <div key={columnId} className="bg-gray-100 rounded-lg flex flex-col h-full min-h-[500px]">
@@ -280,15 +343,18 @@ export default function Index({ auth, quotes, filters }) {
                                                                         {quote.description || 'Sin detalle...'}
                                                                     </p>
 
-                                                                    {quote.internal_notes && (
-                                                                        <div className="mb-2 bg-yellow-50 p-1.5 rounded text-[10px] text-yellow-800 border border-yellow-100 flex items-start gap-1">
-                                                                            <span className="mt-0.5"><NoteIcon /></span>
-                                                                            <span className="line-clamp-2">{quote.internal_notes}</span>
-                                                                        </div>
-                                                                    )}
-                                                                    
+                                                                    <div className="flex gap-2 mb-2">
+                                                                        {quote.valid_until && (
+                                                                            <div className={`text-[10px] flex items-center gap-1 ${isExpired(quote.valid_until) ? 'text-red-600 font-bold bg-red-50 px-1 rounded' : 'text-gray-400'}`}>
+                                                                                <ClockIcon />
+                                                                                <span>Vence: {formatDate(quote.valid_until)}</span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+
                                                                     <div className="flex justify-between items-center text-xs text-gray-400 font-mono pt-2 border-t border-gray-100">
                                                                         <span>{formatDate(quote.created_at)}</span>
+                                                                        {valuesVisible && <span className="font-bold text-gray-600">UF {parseFloat(quote.net_value).toLocaleString()}</span>}
                                                                     </div>
                                                                 </div>
                                                             )}

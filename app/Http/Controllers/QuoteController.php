@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Area;
 use App\Models\Client;
 use App\Models\Quote;
 use Illuminate\Http\Request;
@@ -17,34 +18,53 @@ class QuoteController extends Controller
     {
         $query = Quote::with('client');
 
-        if ($request->has('search_code') && $request->search_code) {
+        // 1. Filtro por Código
+        if ($request->filled('search_code')) {
             $query->where('code', 'LIKE', '%' . $request->search_code . '%');
         }
 
-        if ($request->has('search_client') && $request->search_client) {
-            $query->whereHas('client', function ($q) use ($request) {
-                $q->where('razon_social', 'LIKE', '%' . $request->search_client . '%');
+        // 2. Filtro Híbrido: Cliente O Detalle (Descripción)
+        // Usamos un grupo (closure) para que el OR no rompa los otros filtros
+        if ($request->filled('search_client')) {
+            $searchTerm = $request->search_client;
+            
+            $query->where(function($q) use ($searchTerm) {
+                // Busca en la tabla relacionada 'clients'
+                $q->whereHas('client', function ($sq) use ($searchTerm) {
+                    $sq->where('razon_social', 'LIKE', '%' . $searchTerm . '%');
+                })
+                // O busca en la descripción de la cotización
+                ->orWhere('description', 'LIKE', '%' . $searchTerm . '%');
             });
         }
 
-        if ($request->has('search_status') && $request->search_status && $request->search_status !== 'todos') {
+        // 3. Filtro por Estado exacto
+        if ($request->filled('search_status') && $request->search_status !== 'todos') {
             $query->where('status', $request->search_status);
         }
 
+        // 4. Filtro: Ocultar Perdidas
         if ($request->has('hide_lost') && $request->hide_lost == 'true') {
             $query->where('status', '!=', 'perdida');
         }
 
+        // 5. Filtro: Ocultar Adjudicadas (NUEVO)
+        if ($request->has('hide_won') && $request->hide_won == 'true') {
+            $query->where('status', '!=', 'adjudicada');
+        }
+
         return Inertia::render('Quotes/Index', [
             'quotes' => $query->latest()->get(),
-            'filters' => $request->all(['search_code', 'search_client', 'search_status', 'hide_lost']),
+            // Retornamos todos los filtros a la vista para mantener el estado
+            'filters' => $request->all(['search_code', 'search_client', 'search_status', 'hide_lost', 'hide_won']),
         ]);
     }
 
     public function create()
     {
         return Inertia::render('Quotes/Create', [
-            'clients' => Client::all()
+            'clients' => Client::all(),
+            'areas' => Area::where('is_active', true)->get() 
         ]);
     }
 
@@ -52,10 +72,11 @@ class QuoteController extends Controller
     {
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
-            'area' => 'required|string',
+            'area' => 'required|string|exists:areas,name', 
             'description' => 'nullable|string|max:255',
             'net_value' => 'required|numeric|min:0',
-            'valid_until' => 'required|date|after:today',
+            'valid_until' => 'required|date|after:today',     
+            'reminder_date' => 'nullable|date|before_or_equal:valid_until',
         ]);
 
         $client = Client::findOrFail($validated['client_id']);
@@ -64,9 +85,18 @@ class QuoteController extends Controller
         $tax = $net * 0.19;
         $total = $net + $tax;
 
-        $quoteCode = $this->generateQuoteCode();
+        // --- Generación del Código (Año_Secuencia) ---
+        $year = now()->year;
+        
+        $lastQuote = Quote::where('code', 'LIKE', "{$year}_%")
+            ->selectRaw('*, CAST(SUBSTRING_INDEX(code, "_", -1) AS UNSIGNED) as sequence_num')
+            ->orderBy('sequence_num', 'desc')
+            ->first();
 
-        Quote::create([
+        $sequence = $lastQuote ? ($lastQuote->sequence_num + 1) : 1;
+        $quoteCode = $year . '_' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+
+        $quote = Quote::create([
             'code' => $quoteCode,
             'client_id' => $client->id,
             'client_snapshot' => $client->toArray(),
@@ -76,12 +106,14 @@ class QuoteController extends Controller
             'tax_value' => $tax,
             'total_value' => $total,
             'valid_until' => $validated['valid_until'],
+            'reminder_date' => $validated['reminder_date'],
             'status' => 'pendiente'
         ]);
 
         return redirect()->route('quotes.index')->with('success', 'Cotización creada exitosamente con código: ' . $quoteCode);
     }
 
+    // --- Opción 1: Adjudicar vía Botón dedicado ---
     public function adjudicate(Quote $quote)
     {
         if ($quote->status === 'adjudicada') {
@@ -90,17 +122,20 @@ class QuoteController extends Controller
 
         $quote->update(['status' => 'adjudicada']);
 
-        $newProjectCode = $this->generateProjectCode();
+        $newProjectCode = $quote->code; 
 
+        // 1. Crear Proyecto
         $project = Project::create([
             'quote_id' => $quote->id,
+            'client_id' => $quote->client_id,
             'code' => $newProjectCode,
             'name' => 'Proyecto ' . ($quote->client_snapshot['razon_social'] ?? 'Cliente'),
-            'start_date' => now(),
-            'deadline' => $quote->valid_until,
+            'start_date' => null, 
+            'deadline' => null,   
             'status' => 'activo'
         ]);
 
+        // 2. Crear Columnas Internas
         $project->columns()->createMany([
             ['name' => 'Por Hacer', 'order_index' => 1, 'color' => 'bg-gray-100'],
             ['name' => 'En Proceso', 'order_index' => 2, 'color' => 'bg-blue-50'],
@@ -108,29 +143,33 @@ class QuoteController extends Controller
             ['name' => 'Finalizado', 'order_index' => 4, 'color' => 'bg-green-50'],
         ]);
 
-        return back()->with('success', '¡Felicidades! Proyecto creado exitosamente con código: ' . $newProjectCode);
+        // 3. Crear Tarjeta en Tablero Maestro
+        $this->createBoardTask($project, $quote);
+
+        return back()->with('success', '¡Felicidades! Proyecto creado. Ahora ingresa las fechas de ejecución.');
     }
 
+    // --- Opción 2: Adjudicar vía Dropdown (Cambio de Estado) ---
     public function updateStatus(Request $request, Quote $quote)
     {
         $request->validate(['status' => 'required|in:pendiente,enviada,adjudicada,perdida']);
 
         if ($request->status === 'adjudicada' && $quote->project()->exists()) {
-            return back()->with('error', 'Esta cotización ya fue adjudicada.');
+            return back()->with('error', 'Esta cotización ya fue adjudicada anteriormente.');
         }
 
         $quote->update(['status' => $request->status]);
 
         if ($request->status === 'adjudicada') {
-
-            $newProjectCode = $this->generateProjectCode();
+            $newProjectCode = $quote->code;
 
             $project = Project::create([
                 'quote_id' => $quote->id,
+                'client_id' => $quote->client_id,
                 'code' => $newProjectCode,
                 'name' => 'Proyecto ' . ($quote->client_snapshot['razon_social'] ?? 'Cliente'),
-                'start_date' => now(),
-                'deadline' => $quote->valid_until,
+                'start_date' => null,
+                'deadline' => null,
                 'status' => 'activo'
             ]);
 
@@ -141,27 +180,35 @@ class QuoteController extends Controller
                 ['name' => 'Finalizado', 'order_index' => 4],
             ]);
 
-            $masterBoard = \App\Models\Board::where('type', 'master')->first();
-
-            if ($masterBoard) {
-                $colProceso = $masterBoard->columns()->where('name', 'LIKE', '%Proceso%')->first();
-                $rowGeneral = $masterBoard->rows()->orderBy('order_index')->first();
-
-                if ($colProceso && $rowGeneral) {
-                    \App\Models\BoardTask::create([
-                        'board_id' => $masterBoard->id,
-                        'project_id' => $project->id,
-                        'board_column_id' => $colProceso->id,
-                        'board_row_id' => $rowGeneral->id,
-                        'title' => $project->code . ' - ' . ($quote->client->razon_social ?? 'Sin Cliente'),
-                        'description' => $quote->description,
-                        'order_index' => 0
-                    ]);
-                }
-            }
+            $this->createBoardTask($project, $quote);
         }
 
         return back()->with('success', 'Estado actualizado y tablero sincronizado.');
+    }
+
+    // --- Helper: Crear Tarea en Tablero Maestro ---
+    private function createBoardTask($project, $quote)
+    {
+        $masterBoard = Board::where('type', 'master')->first();
+
+        if ($masterBoard) {
+            // Buscamos la primera columna (Ej: Pendiente) y la primera fila
+            $targetColumn = $masterBoard->columns()->orderBy('order_index', 'asc')->first();
+            $targetRow = $masterBoard->rows()->orderBy('order_index', 'asc')->first();
+
+            if ($targetColumn) {
+                BoardTask::create([
+                    'board_id' => $masterBoard->id,
+                    'project_id' => $project->id, // Vinculación
+                    'board_column_id' => $targetColumn->id,
+                    'board_row_id' => $targetRow ? $targetRow->id : null,
+                    'title' => $project->code . ' - ' . ($quote->client->razon_social ?? 'Sin Cliente'),
+                    'description' => "Adjudicado el: " . now()->format('d/m/Y') . "\n\n" . $quote->description,
+                    'order_index' => 999, // Al final
+                    'assigned_to' => auth()->id(), 
+                ]);
+            }
+        }
     }
 
     public function edit(Quote $quote)
@@ -172,7 +219,8 @@ class QuoteController extends Controller
 
         return Inertia::render('Quotes/Edit', [
             'quote' => $quote,
-            'clients' => Client::all()
+            'clients' => Client::all(),
+            'areas' => Area::where('is_active', true)->get()
         ]);
     }
 
@@ -180,10 +228,11 @@ class QuoteController extends Controller
     {
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
-            'area' => 'required|string',
+            'area' => 'required|string|exists:areas,name',
             'description' => 'nullable|string',
             'net_value' => 'required|numeric|min:0',
             'valid_until' => 'required|date',
+            'reminder_date' => 'nullable|date|before_or_equal:valid_until',
         ]);
 
         $net = $validated['net_value'];
@@ -197,6 +246,7 @@ class QuoteController extends Controller
             'tax_value' => $tax,
             'total_value' => $net + $tax,
             'valid_until' => $validated['valid_until'],
+            'reminder_date' => $validated['reminder_date'],
         ]);
 
         return redirect()->route('quotes.index')->with('success', 'Cotización actualizada correctamente.');
@@ -210,43 +260,11 @@ class QuoteController extends Controller
 
     public function destroy(Quote $quote)
     {
+        // Borramos el proyecto asociado si existe para evitar huérfanos
         if ($quote->project()->exists()) {
             $quote->project->delete();
         }
         $quote->delete();
         return back()->with('success', 'Cotización eliminada correctamente.');
-    }
-
-
-    private function generateProjectCode()
-    {
-        $year = date('Y');
-        $lastProject = Project::where('code', 'LIKE', $year . '_%')
-                              ->orderBy('id', 'desc')
-                              ->first();
-
-        if ($lastProject) {
-            $parts = explode('_', $lastProject->code);
-            $sequence = isset($parts[1]) ? intval($parts[1]) + 1 : 1;
-        } else {
-            $sequence = 1;
-        }
-        return $year . '_' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
-    }
-
-    private function generateQuoteCode()
-    {
-        $year = date('Y');
-        $lastQuote = Quote::where('code', 'LIKE', $year . '_%')
-                          ->orderBy('id', 'desc')
-                          ->first();
-
-        if ($lastQuote) {
-            $parts = explode('_', $lastQuote->code);
-            $sequence = isset($parts[1]) ? intval($parts[1]) + 1 : 1;
-        } else {
-            $sequence = 1;
-        }
-        return $year . '_' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
 }

@@ -5,7 +5,9 @@ export default function Index({ auth, boards }) {
     
     const handleDelete = (id) => {
         if(confirm('¿Seguro que quieres borrar este tablero? Se perderán todas las tareas.')) {
-            router.delete(route('boards.destroy', id));
+            router.delete(route('boards.destroy', id), {
+                preserveScroll: true // Evita que la página salte al inicio
+            });
         }
     };
 
@@ -15,7 +17,7 @@ export default function Index({ auth, boards }) {
             header={
                 <div className="flex justify-between items-center">
                     <h2 className="font-semibold text-xl text-gray-800">Mis Tableros Kanban</h2>
-                    <Link href={route('boards.create')} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-4 rounded shadow flex items-center">
+                    <Link href={route('boards.create')} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-4 rounded shadow flex items-center transition">
                         <span className="mr-1 text-xl">+</span> Crear Tablero
                     </Link>
                 </div>
@@ -40,12 +42,12 @@ export default function Index({ auth, boards }) {
                                 return (
                                     <div 
                                         key={board.id} 
-                                        className={`bg-white overflow-hidden shadow-sm sm:rounded-lg border-l-4 transition hover:shadow-lg relative
+                                        className={`bg-white overflow-hidden shadow-sm sm:rounded-lg border-l-4 transition hover:shadow-lg relative group
                                             ${isMaster ? 'border-indigo-600 ring-1 ring-indigo-50' : 'border-blue-500'}
                                         `}
                                     >
                                         {isMaster && (
-                                            <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-bl-lg font-bold uppercase tracking-wider">
+                                            <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-bl-lg font-bold uppercase tracking-wider shadow-sm">
                                                 Automático
                                             </div>
                                         )}
@@ -67,7 +69,7 @@ export default function Index({ auth, boards }) {
                                                     </div>
                                                 </div>
 
-                                                <div className="flex space-x-1 flex-shrink-0 ml-2">
+                                                <div className="flex space-x-1 flex-shrink-0 ml-2 opacity-0 group-hover:opacity-100 transition duration-200">
                                                     <Link 
                                                         href={route('boards.edit', board.id)} 
                                                         className="bg-gray-100 text-gray-600 p-1.5 rounded hover:bg-yellow-100 hover:text-yellow-600 transition" 
@@ -84,7 +86,7 @@ export default function Index({ auth, boards }) {
                                                 </div>
                                             </div>
                                             
-                                            <p className="text-gray-500 text-sm mb-4 h-10 overflow-hidden text-ellipsis leading-relaxed">
+                                            <p className="text-gray-500 text-sm mb-4 h-10 overflow-hidden text-ellipsis leading-relaxed line-clamp-2">
                                                 {isMaster 
                                                     ? 'Aquí se visualizan automáticamente todos los proyectos adjudicados y sus estados.'
                                                     : (board.description || 'Sin descripción disponible.')

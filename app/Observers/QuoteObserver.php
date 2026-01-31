@@ -24,7 +24,7 @@ class QuoteObserver
             $sequence = 1;
         }
 
-        $quote->code = $year . '_' . str_pad($sequence, 3, '0', STR_PAD_LEFT);
+        $quote->code = $year . '_' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
 
     /**

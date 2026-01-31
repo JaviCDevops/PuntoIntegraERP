@@ -185,13 +185,13 @@ export default function Index({ auth, vehicles }) {
                                 <form onSubmit={submitVehicle} className="max-w-2xl mx-auto bg-white p-6 rounded shadow">
                                     <div className="grid grid-cols-2 gap-4 mb-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700">Patente</label>
-                                            <input type="text" value={data.patent} onChange={e => setData('patent', e.target.value.toUpperCase())} className="w-full border-gray-300 rounded" disabled={modalMode === 'edit'} />
+                                            <label className="block text-sm font-bold text-gray-700">Patente <span className="text-red-500">*</span></label>
+                                            <input type="text" required value={data.patent} onChange={e => setData('patent', e.target.value.toUpperCase())} className="w-full border-gray-300 rounded" disabled={modalMode === 'edit'} />
                                             {errors.patent && <div className="text-red-500 text-xs">{errors.patent}</div>}
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700">Tipo Combustible</label>
-                                            <select value={data.fuel_type} onChange={e => setData('fuel_type', e.target.value)} className="w-full border-gray-300 rounded">
+                                            <label className="block text-sm font-bold text-gray-700">Tipo Combustible <span className="text-red-500">*</span></label>
+                                            <select required value={data.fuel_type} onChange={e => setData('fuel_type', e.target.value)} className="w-full border-gray-300 rounded">
                                                 <option value="">Seleccione...</option>
                                                 <option value="DIESEL">DIESEL</option>
                                                 <option value="GASOLINA">GASOLINA</option>
@@ -199,20 +199,20 @@ export default function Index({ auth, vehicles }) {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700">Marca</label>
-                                            <input type="text" value={data.brand} onChange={e => setData('brand', e.target.value)} className="w-full border-gray-300 rounded" />
+                                            <label className="block text-sm font-bold text-gray-700">Marca <span className="text-red-500">*</span></label>
+                                            <input type="text" required value={data.brand} onChange={e => setData('brand', e.target.value)} className="w-full border-gray-300 rounded" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700">Modelo</label>
-                                            <input type="text" value={data.model} onChange={e => setData('model', e.target.value)} className="w-full border-gray-300 rounded" />
+                                            <label className="block text-sm font-bold text-gray-700">Modelo <span className="text-red-500">*</span></label>
+                                            <input type="text" required value={data.model} onChange={e => setData('model', e.target.value)} className="w-full border-gray-300 rounded" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700">Año</label>
-                                            <input type="number" value={data.year} onChange={e => setData('year', e.target.value)} className="w-full border-gray-300 rounded" />
+                                            <label className="block text-sm font-bold text-gray-700">Año <span className="text-red-500">*</span></label>
+                                            <input type="number" required value={data.year} onChange={e => setData('year', e.target.value)} className="w-full border-gray-300 rounded" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700">Kilometraje Actual</label>
-                                            <input type="number" value={data.current_km} onChange={e => setData('current_km', e.target.value)} className="w-full border-gray-300 rounded font-mono" />
+                                            <label className="block text-sm font-bold text-gray-700">Kilometraje Actual <span className="text-red-500">*</span></label>
+                                            <input type="number" required value={data.current_km} onChange={e => setData('current_km', e.target.value)} className="w-full border-gray-300 rounded font-mono" />
                                         </div>
                                     </div>
                                     
@@ -254,23 +254,23 @@ export default function Index({ auth, vehicles }) {
 
                             {activeTab === 'maintenance' && (
                                 <div className="space-y-6">
-                                    <div className="bg-white p-4 rounded shadow border border-blue-100">
+                                    <form onSubmit={submitMaintenance} className="bg-white p-4 rounded shadow border border-blue-100">
                                         <h4 className="font-bold text-blue-800 mb-3 text-sm uppercase">Registrar Nuevo Evento</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                                            <select value={maintData.type} onChange={e => setMaintData({...maintData, type: e.target.value})} className="border-gray-300 rounded text-sm">
+                                            <select required value={maintData.type} onChange={e => setMaintData({...maintData, type: e.target.value})} className="border-gray-300 rounded text-sm">
                                                 <option value="PREVENTIVA">MANT. PREVENTIVA</option>
                                                 <option value="CORRECTIVA">REPARACIÓN (Correctiva)</option>
                                             </select>
-                                            <input type="date" value={maintData.date} onChange={e => setMaintData({...maintData, date: e.target.value})} className="border-gray-300 rounded text-sm" />
-                                            <input type="number" placeholder="KM al momento" value={maintData.km_at_maintenance} onChange={e => setMaintData({...maintData, km_at_maintenance: e.target.value})} className="border-gray-300 rounded text-sm" />
-                                            <input type="number" placeholder="Costo ($)" value={maintData.cost} onChange={e => setMaintData({...maintData, cost: e.target.value})} className="border-gray-300 rounded text-sm" />
-                                            <input type="text" placeholder="Nombre Taller" value={maintData.garage_name} onChange={e => setMaintData({...maintData, garage_name: e.target.value})} className="border-gray-300 rounded text-sm md:col-span-2" />
-                                            <textarea placeholder="Descripción del trabajo..." value={maintData.description} onChange={e => setMaintData({...maintData, description: e.target.value})} className="border-gray-300 rounded text-sm md:col-span-3" rows="2"></textarea>
+                                            <input type="date" required value={maintData.date} onChange={e => setMaintData({...maintData, date: e.target.value})} className="border-gray-300 rounded text-sm" />
+                                            <input type="number" required placeholder="KM al momento" value={maintData.km_at_maintenance} onChange={e => setMaintData({...maintData, km_at_maintenance: e.target.value})} className="border-gray-300 rounded text-sm" />
+                                            <input type="number" required placeholder="Costo ($)" value={maintData.cost} onChange={e => setMaintData({...maintData, cost: e.target.value})} className="border-gray-300 rounded text-sm" />
+                                            <input type="text" required placeholder="Nombre Taller" value={maintData.garage_name} onChange={e => setMaintData({...maintData, garage_name: e.target.value})} className="border-gray-300 rounded text-sm md:col-span-2" />
+                                            <textarea required placeholder="Descripción del trabajo..." value={maintData.description} onChange={e => setMaintData({...maintData, description: e.target.value})} className="border-gray-300 rounded text-sm md:col-span-3" rows="2"></textarea>
                                         </div>
-                                        <button onClick={submitMaintenance} className="bg-indigo-600 text-white text-sm font-bold py-2 px-4 rounded hover:bg-indigo-700 w-full md:w-auto">
+                                        <button type="submit" className="bg-indigo-600 text-white text-sm font-bold py-2 px-4 rounded hover:bg-indigo-700 w-full md:w-auto">
                                             Guardar Historial
                                         </button>
-                                    </div>
+                                    </form>
 
                                     <div className="bg-white rounded shadow overflow-hidden">
                                         <table className="min-w-full text-sm">
@@ -312,12 +312,12 @@ export default function Index({ auth, vehicles }) {
 
                             {activeTab === 'docs' && (
                                 <div className="space-y-6">
-                                    <div className="bg-white p-4 rounded shadow border border-green-100">
+                                    <form onSubmit={submitDocument} className="bg-white p-4 rounded shadow border border-green-100">
                                         <h4 className="font-bold text-green-800 mb-3 text-sm uppercase border-b pb-2">Nuevo Documento</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-500 mb-1">Tipo de Documento</label>
-                                                <select value={docData.document_type} onChange={e => setDocData({...docData, document_type: e.target.value})} className="w-full border-gray-300 rounded text-sm">
+                                                <select required value={docData.document_type} onChange={e => setDocData({...docData, document_type: e.target.value})} className="w-full border-gray-300 rounded text-sm">
                                                     <option>REVISIÓN TÉCNICA</option>
                                                     <option>PERMISO DE CIRCULACIÓN</option>
                                                     <option>SOAP (SEGURO OBLIGATORIO)</option>
@@ -331,12 +331,12 @@ export default function Index({ auth, vehicles }) {
                                                 <input type="date" value={docData.expiration_date} onChange={e => setDocData({...docData, expiration_date: e.target.value})} className="w-full border-gray-300 rounded text-sm" />
                                             </div>
                                             <div className="md:col-span-2">
-                                                <label className="block text-xs font-bold text-gray-500 mb-1">Adjuntar Archivo</label>
-                                                <input type="file" onChange={e => setDocData({...docData, file: e.target.files[0]})} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" accept=".pdf,.jpg,.jpeg,.png" />
+                                                <label className="block text-xs font-bold text-gray-500 mb-1">Adjuntar Archivo <span className="text-red-500">*</span></label>
+                                                <input type="file" required onChange={e => setDocData({...docData, file: e.target.files[0]})} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" accept=".pdf,.jpg,.jpeg,.png" />
                                             </div>
                                         </div>
-                                        <button onClick={submitDocument} className="w-full bg-green-600 text-white font-bold py-2 px-6 rounded hover:bg-green-700 text-sm">Subir Documento</button>
-                                    </div>
+                                        <button type="submit" className="w-full bg-green-600 text-white font-bold py-2 px-6 rounded hover:bg-green-700 text-sm">Subir Documento</button>
+                                    </form>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {activeVehicle?.documents && activeVehicle.documents.map(doc => (

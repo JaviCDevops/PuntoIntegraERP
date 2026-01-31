@@ -63,15 +63,22 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                 )}
                                 
                                 {user.permissions && user.permissions.includes('rrhh') && (
-                                <NavLink href={route('rrhh.index')} active={route().current('rrhh.*')}>
-                                    RRHH
-                                </NavLink>
+                                    <NavLink href={route('rrhh.index')} active={route().current('rrhh.*')}>
+                                        RRHH
+                                    </NavLink>
                                 )}
 
                                 {user.permissions && user.permissions.includes('vehicles') && (
-                                <NavLink href={route('vehicles.index')} active={route().current('vehicles.*')}>
-                                    Flota
-                                </NavLink>
+                                    <NavLink href={route('vehicles.index')} active={route().current('vehicles.*')}>
+                                        Flota
+                                    </NavLink>
+                                )}
+
+                                {/* AGREGADO: Enlace de Áreas para Escritorio */}
+                                {user.permissions && user.permissions.includes('areas') && (
+                                    <NavLink href={route('areas.index')} active={route().current('areas.*')}>
+                                        Áreas
+                                    </NavLink>
                                 )}
                             </div>
                         </div>
@@ -230,15 +237,21 @@ export default function AuthenticatedLayout({ user, header, children }) {
                         )}
 
                         {user.permissions && user.permissions.includes('rrhh') && (
-                        <ResponsiveNavLink href={route('rrhh.index')} active={route().current('rrhh.*')}>
-                            RRHH
-                        </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('rrhh.index')} active={route().current('rrhh.*')}>
+                                RRHH
+                            </ResponsiveNavLink>
                         )}
 
                         {user.permissions && user.permissions.includes('vehicles') && (
-                        <ResponsiveNavLink href={route('vehicles.index')} active={route().current('vehicles.*')}>
-                            Flota
-                        </ResponsiveNavLink>
+                            <ResponsiveNavLink href={route('vehicles.index')} active={route().current('vehicles.*')}>
+                                Flota
+                            </ResponsiveNavLink>
+                        )}
+
+                        {user.permissions && user.permissions.includes('areas') && (
+                            <ResponsiveNavLink href={route('areas.index')} active={route().current('areas.*')}>
+                                Áreas
+                            </ResponsiveNavLink>
                         )}
                     </div>
 

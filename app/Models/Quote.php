@@ -11,8 +11,10 @@ class Quote extends Model
     protected $casts = [
         'client_snapshot' => 'array', 
         'valid_until' => 'date',
-        'client_snapshot' => 'array',
     ];
+
+    // 🛑 IMPORTANTE: AQUÍ NO HAY NINGÚN MÉTODO "boot" NI "creating"
+    // Si tenías código aquí antes, ELIMÍNALO TODO.
 
     public function client()
     {

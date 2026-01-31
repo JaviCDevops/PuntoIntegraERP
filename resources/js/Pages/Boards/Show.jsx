@@ -61,7 +61,7 @@ export default function Show({ auth, board }) {
     };
 
     const saveTaskDetails = () => {
-        if(!editingTask) return;
+        if(!editingTask || !editingTask.title.trim()) return; // Validación extra
         router.put(route('boards.task.update', editingTask.id), {
             title: editingTask.title, 
             description: editingTask.description
@@ -150,6 +150,7 @@ export default function Show({ auth, board }) {
                                                             <input 
                                                                 autoFocus 
                                                                 type="text" 
+                                                                required
                                                                 value={data.title} 
                                                                 onChange={e => setData('title', e.target.value)} 
                                                                 onBlur={() => !data.title && setAddingTask({rowId:null, colId:null})}
@@ -209,8 +210,16 @@ export default function Show({ auth, board }) {
                         
                         <div className="p-6 space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Título</label>
-                                <input type="text" className="w-full border-gray-300 rounded font-semibold text-gray-800 focus:ring-blue-500 focus:border-blue-500" value={editingTask.title} onChange={(e) => setEditingTask({...editingTask, title: e.target.value})} />
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                                    Título <span className="text-red-500">*</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    required
+                                    className="w-full border-gray-300 rounded font-semibold text-gray-800 focus:ring-blue-500 focus:border-blue-500" 
+                                    value={editingTask.title} 
+                                    onChange={(e) => setEditingTask({...editingTask, title: e.target.value})} 
+                                />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Descripción</label>
@@ -220,7 +229,17 @@ export default function Show({ auth, board }) {
 
                         <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                             <button onClick={deleteTask} className="text-red-500 hover:text-red-700 text-sm font-semibold hover:underline">Eliminar</button>
-                            <button onClick={saveTaskDetails} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition">Guardar Cambios</button>
+                            <button 
+                                onClick={saveTaskDetails} 
+                                disabled={!editingTask.title.trim()}
+                                className={`font-bold py-2 px-6 rounded shadow transition 
+                                    ${!editingTask.title.trim() 
+                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                    }`}
+                            >
+                                Guardar Cambios
+                            </button>
                         </div>
                     </div>
                 </div>
