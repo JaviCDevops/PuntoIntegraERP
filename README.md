@@ -1,59 +1,150 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+Markdown
+# Sistema de Gestión Corporativo (ERP/CRM)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Plataforma integral web para la gestión comercial, control de proyectos y seguimiento de tareas mediante tableros Kanban. Desarrollado con **Laravel 10** e **Inertia.js (React)**.
 
-## About Laravel
+## 🚀 Características Principales
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 1. Gestión Comercial (Cotizaciones)
+- **CRUD Completo:** Creación, edición y eliminación de cotizaciones.
+- **Generación de PDF:** Exportación automática de documentos formales.
+- **Búsqueda Inteligente:** Filtros híbridos por Cliente o Descripción del proyecto.
+- **Filtros Avanzados:** Ocultar perdidas, ocultar adjudicadas y filtrado por estado.
+- **Lógica de Adjudicación:** Al ganar una cotización, el sistema genera automáticamente el Proyecto y la Tarea en el tablero maestro.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 2. Gestión de Proyectos
+- **Vinculación Automática:** Conexión directa con la cotización original.
+- **Control de Hitos de Pago:** Validación estricta para que los porcentajes sumen exactamente 100%.
+- **Gestión de Fechas:** Control de inicio, término y vencimientos.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 3. Tableros Kanban (Gestión de Tareas)
+- **Tablero Maestro:** Vista centralizada de todos los proyectos adjudicados.
+- **Drag & Drop:** Interfaz reactiva para mover tarjetas entre columnas.
+- **Asignación de Responsables:** Vinculación de usuarios a tareas específicas.
+- **Estructura Flexible:** Soporte para Columnas y Filas (Matriz).
 
-## Learning Laravel
+### 4. Recursos Humanos
+- **Validación de RUT:** Verificación en tiempo real y formato chileno.
+- **Historial de Empleados:** Recuperación inteligente de datos si un empleado antiguo es recontratado.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+---
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 🛠 Tech Stack
 
-## Laravel Sponsors
+- **Backend:** Laravel 10 (PHP 8.1+)
+- **Frontend:** React 18, Inertia.js
+- **Estilos:** Tailwind CSS
+- **Base de Datos:** MySQL
+- **Autenticación:** Laravel Breeze / Sanctum
+- **PDF:** Barryvdh DomPDF
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+---
 
-### Premium Partners
+## ⚙️ Requisitos Previos
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Asegúrate de tener instalado en tu entorno local:
+- PHP >= 8.1
+- Composer
+- Node.js & NPM
+- MySQL
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 📦 Instalación y Configuración
 
-## Code of Conduct
+Sigue estos pasos para levantar el proyecto desde cero:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 1. Clonar el Repositorio
+```bash
+git clone [https://github.com/tu-usuario/nombre-repo.git](https://github.com/tu-usuario/nombre-repo.git)
+cd nombre-repo
+2. Instalar Dependencias de Backend
+Bash
+composer install
+3. Instalar Dependencias de Frontend
+Bash
+npm install
+4. Configurar Entorno
+Duplica el archivo de ejemplo y configura tus credenciales:
 
-## Security Vulnerabilities
+Bash
+cp .env.example .env
+Abre el archivo .env y configura tu base de datos:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Ini, TOML
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=nombre_de_tu_bd
+DB_USERNAME=root
+DB_PASSWORD=
+5. Generar Key de la Aplicación
+Bash
+php artisan key:generate
+6. Migraciones y Seeders
+Es vital ejecutar las migraciones. Importante: Asegúrate de tener un seeder para crear el "Tablero Maestro" (type='master'), ya que la lógica de cotizaciones depende de ello.
 
-## License
+Bash
+php artisan migrate --seed
+7. Ejecutar el Proyecto
+Necesitarás dos terminales abiertas:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Terminal 1 (Backend):
+
+Bash
+php artisan serve
+Terminal 2 (Frontend - Vite):
+
+Bash
+npm run dev
+El sistema estará disponible en: http://localhost:8000
+
+💡 Flujo de Uso
+Ciclo de Vida de una Venta
+Crear Cotización: Ir a "Gestión Comercial" -> "Nueva Cotización".
+
+Enviar: Cambiar estado a "Enviada". Se puede descargar el PDF.
+
+Adjudicar:
+
+Cambiar estado a "Adjudicada".
+
+El sistema preguntará confirmación.
+
+Automáticamente: Se crea el Proyecto en la base de datos y aparece una tarjeta en la columna "Por Hacer" del Tablero Maestro.
+
+Gestión de Pagos
+Ir al Proyecto creado.
+
+En la sección "Hitos de Pago", agregar los porcentajes.
+
+Regla: El sistema no permitirá guardar si la suma de los porcentajes es distinta a 100%.
+
+⚠️ Configuración Crítica (Base de Datos)
+Para que la adjudicación automática funcione, debe existir un registro en la tabla boards con el tipo master.
+
+Si no usaste seeders, ejecuta esto en tu base de datos SQL manualmente:
+
+SQL
+INSERT INTO boards (title, type, user_id, created_at, updated_at) 
+VALUES ('Tablero Maestro', 'master', 1, NOW(), NOW());
+
+-- Asegúrate de crearle columnas al tablero maestro
+INSERT INTO board_columns (board_id, name, order_index, created_at, updated_at)
+VALUES 
+(1, 'Por Hacer', 1, NOW(), NOW()),
+(1, 'En Proceso', 2, NOW(), NOW()),
+(1, 'Finalizado', 3, NOW(), NOW());
+🤝 Contribución
+Haz un Fork del proyecto
+
+Crea tu rama (git checkout -b feature/AmazingFeature)
+
+Haz commit de tus cambios (git commit -m 'Add some AmazingFeature')
+
+Push a la rama (git push origin feature/AmazingFeature)
+
+Abre un Pull Request
+
+📄 Licencia
+Este proyecto está bajo la Licencia MIT.
