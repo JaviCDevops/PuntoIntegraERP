@@ -204,7 +204,6 @@ class QuoteController extends Controller
                     'title' => $project->code . ' - ' . ($quote->client->razon_social ?? 'Sin Cliente'),
                     'description' => "Adjudicado el: " . now()->format('d/m/Y') . "\n\n" . $quote->description,
                     'order_index' => 999, // Al final
-                    'assigned_to' => auth()->id(), 
                 ]);
             }
         }

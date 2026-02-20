@@ -18,8 +18,8 @@ export default function Index({ auth, projects = [], filters = {} }) {
     const [searchClient, setSearchClient] = useState(filters.search_client || '');
     const [searchStatus, setSearchStatus] = useState(filters.search_status || 'todos');
 
-    // Estado para rastrear qué campo está siendo editado por el usuario para evitar sincronización conflictiva
-    const [editingFieldRef, setEditingFieldRef] = useState(null);
+    // Rastrear qué campo está siendo editado actualmente para evitar sobrescrituras
+    const [editingMilestone, setEditingMilestone] = useState(null); // { index, field }
 
     const kanbanColumns = {
         'activo':     { title: 'En Proceso', color: 'border-blue-500', bg: 'bg-blue-50' },
@@ -85,13 +85,27 @@ export default function Index({ auth, projects = [], filters = {} }) {
     const updateMilestone = (index, field, value) => {
         const newMilestones = [...data.milestones];
         newMilestones[index][field] = value;
+        
+        // Marcar que este campo está siendo editado
+        setEditingMilestone({ index, field });
+        
+        // Solo calcular el campo complementario si:
+        // 1. El usuario NO está editando el otro campo del mismo milestone
+        // 2. El valor es válido (no vacío y mayor a 0)
         const totalProjectValue = parseFloat(currentProject?.quote?.total_value || 0);
         
-        // Solo sincroniza el campo complementario si el valor es válido y mayor a 0
-        if (field === 'percentage' && value) {
-            newMilestones[index]['amount'] = (totalProjectValue * (value / 100)).toFixed(2);
-        } else if (field === 'amount' && value) {
-            newMilestones[index]['percentage'] = ((value / totalProjectValue) * 100).toFixed(2);
+        if (value && totalProjectValue > 0) {
+            if (field === 'percentage') {
+                // Solo calcula monto si el usuario NO está editando el monto en este milestone
+                if (editingMilestone?.index !== index || editingMilestone?.field !== 'amount') {
+                    newMilestones[index]['amount'] = (totalProjectValue * (value / 100)).toFixed(2);
+                }
+            } else if (field === 'amount') {
+                // Solo calcula porcentaje si el usuario NO está editando el porcentaje en este milestone
+                if (editingMilestone?.index !== index || editingMilestone?.field !== 'percentage') {
+                    newMilestones[index]['percentage'] = ((value / totalProjectValue) * 100).toFixed(2);
+                }
+            }
         }
         
         setData('milestones', newMilestones);
@@ -403,7 +417,8 @@ export default function Index({ auth, projects = [], filters = {} }) {
                                                     type="number" 
                                                     required 
                                                     value={ms.percentage} 
-                                                    onChange={e => updateMilestone(index, 'percentage', e.target.value)} 
+                                                    onChange={e => updateMilestone(index, 'percentage', e.target.value)}
+                                                    onBlur={() => setEditingMilestone(null)}
                                                     className="w-full text-sm border-gray-300 rounded" 
                                                 />
                                             </div>
@@ -415,7 +430,8 @@ export default function Index({ auth, projects = [], filters = {} }) {
                                                     required 
                                                     step="0.01" 
                                                     value={ms.amount} 
-                                                    onChange={e => updateMilestone(index, 'amount', e.target.value)} 
+                                                    onChange={e => updateMilestone(index, 'amount', e.target.value)}
+                                                    onBlur={() => setEditingMilestone(null)}
                                                     className="w-full text-sm border-gray-300 rounded" 
                                                 />
                                             </div>
