@@ -18,6 +18,9 @@ export default function Index({ auth, projects = [], filters = {} }) {
     const [searchClient, setSearchClient] = useState(filters.search_client || '');
     const [searchStatus, setSearchStatus] = useState(filters.search_status || 'todos');
 
+    // Estado para rastrear qué campo está siendo editado por el usuario para evitar sincronización conflictiva
+    const [editingFieldRef, setEditingFieldRef] = useState(null);
+
     const kanbanColumns = {
         'activo':     { title: 'En Proceso', color: 'border-blue-500', bg: 'bg-blue-50' },
         'pausado':    { title: 'Pausado',    color: 'border-orange-500', bg: 'bg-orange-50' },
@@ -83,8 +86,14 @@ export default function Index({ auth, projects = [], filters = {} }) {
         const newMilestones = [...data.milestones];
         newMilestones[index][field] = value;
         const totalProjectValue = parseFloat(currentProject?.quote?.total_value || 0);
-        if (field === 'percentage') newMilestones[index]['amount'] = (totalProjectValue * (value / 100)).toFixed(2);
-        else if (field === 'amount') newMilestones[index]['percentage'] = ((value / totalProjectValue) * 100).toFixed(2);
+        
+        // Solo sincroniza el campo complementario si el valor es válido y mayor a 0
+        if (field === 'percentage' && value) {
+            newMilestones[index]['amount'] = (totalProjectValue * (value / 100)).toFixed(2);
+        } else if (field === 'amount' && value) {
+            newMilestones[index]['percentage'] = ((value / totalProjectValue) * 100).toFixed(2);
+        }
+        
         setData('milestones', newMilestones);
     };
 

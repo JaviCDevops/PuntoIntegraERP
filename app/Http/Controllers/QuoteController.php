@@ -124,10 +124,9 @@ class QuoteController extends Controller
 
         $newProjectCode = $quote->code; 
 
-        // 1. Crear Proyecto
+        // 1. Crear Proyecto (Línea client_id eliminada correctamente)
         $project = Project::create([
             'quote_id' => $quote->id,
-            'client_id' => $quote->client_id,
             'code' => $newProjectCode,
             'name' => 'Proyecto ' . ($quote->client_snapshot['razon_social'] ?? 'Cliente'),
             'start_date' => null, 
@@ -163,9 +162,9 @@ class QuoteController extends Controller
         if ($request->status === 'adjudicada') {
             $newProjectCode = $quote->code;
 
+            // 1. Crear Proyecto (Línea client_id eliminada correctamente)
             $project = Project::create([
                 'quote_id' => $quote->id,
-                'client_id' => $quote->client_id,
                 'code' => $newProjectCode,
                 'name' => 'Proyecto ' . ($quote->client_snapshot['razon_social'] ?? 'Cliente'),
                 'start_date' => null,

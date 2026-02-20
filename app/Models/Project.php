@@ -16,16 +16,12 @@ class Project extends Model
     protected $fillable = [
         'code',
         'quote_id',
-        'client_id',
-        'user_id',
-        'area_id', 
         'name',
         'oc_number',
         'internal_notes',
         'start_date',
         'deadline',
-        'status',
-        'description' 
+        'status'
     ];
 
     protected $casts = [
