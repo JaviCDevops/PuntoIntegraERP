@@ -129,8 +129,12 @@ class QuoteController extends Controller
             'quote_id' => $quote->id,
             'code' => $newProjectCode,
             'name' => 'Proyecto ' . ($quote->client_snapshot['razon_social'] ?? 'Cliente'),
-            'start_date' => null, 
-            'deadline' => null,   
+            // insertar una fecha inicial para no violar la restricción de la base de datos
+            'start_date' => now()->toDateString(),
+            // si el usuario nunca ha definido un plazo, podemos heredar la
+            // validez de la cotización o dejarlo en null si la columna es
+            // nullable (migración 2026_02_16 cambia esto).
+            'deadline' => $quote->valid_until ?? null,
             'status' => 'activo'
         ]);
 
@@ -167,8 +171,9 @@ class QuoteController extends Controller
                 'quote_id' => $quote->id,
                 'code' => $newProjectCode,
                 'name' => 'Proyecto ' . ($quote->client_snapshot['razon_social'] ?? 'Cliente'),
-                'start_date' => null,
-                'deadline' => null,
+                // asegurar un valor para no chocar con la base de datos
+                'start_date' => now()->toDateString(),
+                'deadline' => $quote->valid_until ?? null,
                 'status' => 'activo'
             ]);
 

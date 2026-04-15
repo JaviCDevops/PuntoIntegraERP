@@ -62,7 +62,7 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                     </NavLink>
                                 )}
                                 
-                                {user.permissions && user.permissions.includes('rrhh') && (
+                                {user.permissions && (user.permissions.includes('rrhh') || user.permissions.includes('manage_users')) && (
                                     <NavLink href={route('rrhh.index')} active={route().current('rrhh.*')}>
                                         RRHH
                                     </NavLink>

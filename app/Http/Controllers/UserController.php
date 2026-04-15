@@ -16,13 +16,24 @@ class UserController extends Controller
 {
     public function index()
     {
+        // Solo usuarios con permiso pueden ver la lista de usuarios
+        if (!auth()->user()->hasPermission('manage_users')) {
+            abort(403, 'No tienes permiso para gestionar usuarios.');
+        }
+
         return Inertia::render('Users/Index', [
-            'users' => User::with('employee')->latest()->get()
+            'users' => User::with('employee')->latest()->get(),
+            'canManageUsers' => auth()->user()->hasPermission('manage_users'),
         ]);
     }
 
     public function create()
     {
+        // Solo usuarios con permiso pueden crear usuarios
+        if (!auth()->user()->hasPermission('manage_users')) {
+            abort(403, 'No tienes permiso para crear usuarios.');
+        }
+
         return Inertia::render('Users/Create');
     }
 
@@ -144,6 +155,11 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
+        // Solo usuarios con permiso pueden editar usuarios
+        if (!auth()->user()->hasPermission('manage_users')) {
+            abort(403, 'No tienes permiso para editar usuarios.');
+        }
+
         return Inertia::render('Users/Edit', [
             'user' => $user->load('employee') 
         ]);
@@ -151,6 +167,11 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        // Solo usuarios con permiso pueden actualizar usuarios
+        if (!auth()->user()->hasPermission('manage_users')) {
+            abort(403, 'No tienes permiso para actualizar usuarios.');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
@@ -200,6 +221,11 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        // Solo usuarios con permiso pueden eliminar usuarios
+        if (!auth()->user()->hasPermission('manage_users')) {
+            abort(403, 'No tienes permiso para eliminar usuarios.');
+        }
+
         if (auth()->id() === $user->id) {
             return back()->with('error', 'No puedes eliminarte a ti mismo.');
         }

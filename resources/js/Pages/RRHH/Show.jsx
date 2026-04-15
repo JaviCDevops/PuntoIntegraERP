@@ -2,7 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router, Link } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function Show({ auth, employee }) {
+export default function Show({ auth, employee, canManageUsers }) {
     const [activeTab, setActiveTab] = useState('info');
 
     // --- ELIMINAMOS EL useForm DE PERFIL ---
@@ -78,20 +78,22 @@ export default function Show({ auth, employee }) {
                             </div>
                             
                             {/* Botón para ir a Editar al Módulo de Usuarios */}
-                            <div className="border-l pl-6">
-                                <Link 
-                                    href={route('users.edit', employee.user.id)}
-                                    className="flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 transition group"
-                                    title="Editar Datos Maestros"
-                                >
-                                    <div className="p-2 bg-gray-100 rounded-full group-hover:bg-indigo-100 transition">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                        </svg>
-                                    </div>
-                                    <span className="text-[10px] font-bold mt-1">Editar Ficha</span>
-                                </Link>
-                            </div>
+                            {canManageUsers && (
+                                <div className="border-l pl-6">
+                                    <Link 
+                                        href={route('users.edit', employee.user.id)}
+                                        className="flex flex-col items-center justify-center text-gray-500 hover:text-indigo-600 transition group"
+                                        title="Editar Datos Maestros"
+                                    >
+                                        <div className="p-2 bg-gray-100 rounded-full group-hover:bg-indigo-100 transition">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            </svg>
+                                        </div>
+                                        <span className="text-[10px] font-bold mt-1">Editar Ficha</span>
+                                    </Link>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -255,7 +257,7 @@ export default function Show({ auth, employee }) {
                                                                 </span>
                                                             </td>
                                                             <td className="px-4 py-3 text-right">
-                                                                {leave.status === 'pendiente' && auth.user.permissions?.includes('users') ? (
+                                                                {leave.status === 'pendiente' && canManageUsers ? (
                                                                     <div className="flex justify-end gap-1">
                                                                         <button onClick={() => router.put(route('rrhh.leaves.status', leave.id), { status: 'aprobada' })} className="bg-green-100 hover:bg-green-200 text-green-700 p-1 rounded" title="Aprobar">
                                                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>

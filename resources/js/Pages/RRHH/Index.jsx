@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 
-export default function Index({ auth, employees }) {
+export default function Index({ auth, employees, canManageUsers }) {
     
     return (
         <AuthenticatedLayout
@@ -75,7 +75,7 @@ export default function Index({ auth, employees }) {
                                         {/* NOTA: Necesitamos el user_id para editar. 
                                             Asegúrate de que tu controlador RRHH Index lo esté enviando. 
                                             Si no, usa employee.user.id si cargaste la relación. */}
-                                        {employee.user_id && (
+                                        {canManageUsers && employee.user_id && (
                                             <Link 
                                                 href={route('users.edit', employee.user_id)} 
                                                 className="text-gray-400 hover:text-gray-600 hover:underline text-xs"

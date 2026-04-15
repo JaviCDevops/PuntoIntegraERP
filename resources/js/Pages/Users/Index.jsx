@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 
-export default function Index({ auth, users }) {
+export default function Index({ auth, users, canManageUsers }) {
     
     const handleDelete = (id) => {
         if(confirm('¿Estás seguro de eliminar este usuario? Si es empleado, se borrará también su ficha y documentos.')) {
@@ -18,10 +18,12 @@ export default function Index({ auth, users }) {
                         <h2 className="font-semibold text-xl text-gray-800 leading-tight">Usuarios del Sistema</h2>
                         <p className="text-sm text-gray-500 mt-1">Gestión unificada de accesos y personal</p>
                     </div>
-                    <Link href={route('users.create')} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow font-bold transition flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
-                        Nuevo Usuario
-                    </Link>
+                    {canManageUsers && (
+                        <Link href={route('users.create')} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow font-bold transition flex items-center gap-2">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+                            Nuevo Usuario
+                        </Link>
+                    )}
                 </div>
             }
         >
@@ -86,18 +88,22 @@ export default function Index({ auth, users }) {
                                     </td>
                                     
                                     <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
-                                        <Link 
-                                            href={route('users.edit', user.id)} 
-                                            className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded transition mr-2"
-                                        >
-                                            Editar
-                                        </Link>
-                                        <button 
-                                            onClick={() => handleDelete(user.id)} 
-                                            className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded transition"
-                                        >
-                                            Borrar
-                                        </button>
+                                        {canManageUsers && (
+                                            <>
+                                                <Link 
+                                                    href={route('users.edit', user.id)} 
+                                                    className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded transition mr-2"
+                                                >
+                                                    Editar
+                                                </Link>
+                                                <button 
+                                                    onClick={() => handleDelete(user.id)} 
+                                                    className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded transition"
+                                                >
+                                                    Borrar
+                                                </button>
+                                            </>
+                                        )}
                                     </td>
                                 </tr>
                             ))}

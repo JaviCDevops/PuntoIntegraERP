@@ -10,6 +10,12 @@ Plataforma integral web para la gestión comercial, control de proyectos y segui
 - **Generación de PDF:** Exportación automática de documentos formales.
 - **Búsqueda Inteligente:** Filtros híbridos por Cliente o Descripción del proyecto.
 - **Filtros Avanzados:** Ocultar perdidas, ocultar adjudicadas y filtrado por estado.
+
+> ⚠️ **Nota de migración:** A partir de la versión 2026.XX se cambió la columna `start_date` y
+> `deadline` de la tabla `projects` a `nullable`. Si actualizas desde un despliegue antiguo
+> recuerda ejecutar `php artisan migrate` antes de adjudicar cotizaciones; además el código
+> ahora asigna automáticamente `start_date` igual a la fecha actual para evitar errores de
+> integridad si la migración no se ha ejecutado aún.
 - **Lógica de Adjudicación:** Al ganar una cotización, el sistema genera automáticamente el Proyecto y la Tarea en el tablero maestro.
 
 ### 2. Gestión de Proyectos
