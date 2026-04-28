@@ -13,6 +13,10 @@ class VehicleController extends Controller
 {
     public function index()
     {
+        if (!auth()->user()->hasPermission('vehicles')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $vehicles = Vehicle::with(['maintenances' => function($q) {
             $q->latest('date'); 
         }, 'documents'])->orderBy('patent')->get();
@@ -40,6 +44,10 @@ class VehicleController extends Controller
 
     public function store(Request $request)
     {
+        if (!auth()->user()->hasPermission('vehicles')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $data = $request->validate([
             'patent' => 'required|unique:vehicles,patent|max:10',
             'brand' => 'required|string',
@@ -55,6 +63,10 @@ class VehicleController extends Controller
 
     public function update(Request $request, Vehicle $vehicle)
     {
+        if (!auth()->user()->hasPermission('vehicles')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $data = $request->validate([
             'brand' => 'required|string',
             'model' => 'required|string',
@@ -69,12 +81,20 @@ class VehicleController extends Controller
 
     public function destroy(Vehicle $vehicle)
     {
+        if (!auth()->user()->hasPermission('vehicles')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $vehicle->delete();
         return back()->with('success', 'Vehículo eliminado.');
     }
 
     public function storeMaintenance(Request $request, Vehicle $vehicle)
     {
+        if (!auth()->user()->hasPermission('vehicles')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $data = $request->validate([
             'type' => 'required|string', 
             'date' => 'required|date',
@@ -95,6 +115,10 @@ class VehicleController extends Controller
 
     public function storeDocument(Request $request, Vehicle $vehicle)
     {
+        if (!auth()->user()->hasPermission('vehicles')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $data = $request->validate([
             'document_type' => 'required|string',
             'expiration_date' => 'nullable|date',
@@ -124,6 +148,10 @@ class VehicleController extends Controller
     
     public function destroyDocument($id) 
     {
+        if (!auth()->user()->hasPermission('vehicles')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         VehicleDocument::find($id)->delete();
         return back()->with('success', 'Documento eliminado.');
     }

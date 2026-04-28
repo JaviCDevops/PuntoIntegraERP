@@ -28,7 +28,21 @@ class HandleInertiaRequests extends Middleware
         {
             return array_merge(parent::share($request), [
                 'auth' => [
-                    'user' => $request->user(),
+                    'user' => function () use ($request) {
+                        $user = $request->user();
+
+                        if (!$user) {
+                            return null;
+                        }
+
+                        $user->loadMissing('employee');
+
+                        if ($user->employee) {
+                            $user->employee->append('vacation_balance');
+                        }
+
+                        return $user;
+                    },
                 ],
                 'notifications' => function () use ($request) {
                     if (!$request->user()) return [];

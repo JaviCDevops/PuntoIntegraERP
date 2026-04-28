@@ -13,6 +13,10 @@ class BoardController extends Controller
 {
     public function index()
     {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $user = auth()->user();
         
         $boards = Board::where('user_id', $user->id)
@@ -25,6 +29,10 @@ class BoardController extends Controller
 
     public function create()
     {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         return Inertia::render('Boards/Create', [
             'users' => User::all() 
         ]);
@@ -32,6 +40,10 @@ class BoardController extends Controller
 
     public function store(Request $request)
     {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string',
             'description' => 'nullable|string',
@@ -73,6 +85,10 @@ class BoardController extends Controller
 
     public function show($id)
     {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $board = Board::with([
             'columns.tasks.assignee', // Cargamos tareas y responsable
             'rows.tasks.assignee',
@@ -87,6 +103,10 @@ class BoardController extends Controller
     // --- FUNCIÓN CORREGIDA PARA GUARDAR TAREAS ---
     public function storeTask(Request $request, Board $board)
     {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         // 1. Validación estricta
         $validated = $request->validate([
             'column_id' => 'required|exists:board_columns,id',
@@ -120,6 +140,10 @@ class BoardController extends Controller
 
     public function moveTask(Request $request, $id)
     {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $request->validate([
             'column_id' => 'required|exists:board_columns,id',
             'row_id' => 'required|exists:board_rows,id',
@@ -157,6 +181,10 @@ class BoardController extends Controller
 
     public function updateTask(Request $request, $id)
     {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $task = BoardTask::findOrFail($id);
         $task->update($request->only('title', 'description'));
         return back();
@@ -164,12 +192,20 @@ class BoardController extends Controller
 
     public function destroyTask($id)
     {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         BoardTask::destroy($id);
         return back();
     }
 
     public function edit(Board $board)
     {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $board->load(['columns' => function($q) {
             $q->orderBy('order_index');
         }, 'rows' => function($q) {
@@ -184,6 +220,10 @@ class BoardController extends Controller
 
     public function update(Request $request, Board $board)
     {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -236,6 +276,10 @@ class BoardController extends Controller
 
     public function destroy(Board $board)
     {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         if ($board->type === 'master') {
             return back()->with('error', 'No puedes eliminar el Tablero Maestro del sistema.');
         }

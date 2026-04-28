@@ -12,6 +12,10 @@ class TaskController extends Controller
 {
     public function index(Project $project)
     {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $project->load(['columns.tasks.assignedUser']);
 
         return Inertia::render('Projects/Kanban', [
@@ -23,6 +27,10 @@ class TaskController extends Controller
 
     public function store(Request $request, Project $project)
     {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -47,6 +55,10 @@ class TaskController extends Controller
 
     public function move(Request $request, Task $task)
     {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         $validated = $request->validate([
             'column_id' => 'required|exists:task_columns,id',
             'new_index' => 'required|integer'

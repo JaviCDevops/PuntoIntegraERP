@@ -11,6 +11,11 @@ class ProjectController extends Controller
 {
     public function index(Request $request)
     {
+        // Verificar permiso para acceder al módulo de proyectos
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder al módulo de proyectos.');
+        }
+
         $query = Project::with(['quote.client', 'milestones', 'area'])->latest();
 
         if ($request->filled('search_code')) {
@@ -36,6 +41,11 @@ class ProjectController extends Controller
 
     public function update(Request $request, Project $project)
     {
+        // Verificar permiso para actualizar proyectos
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para actualizar proyectos.');
+        }
+
         $data = $request->validate([
             'oc_number' => 'nullable|string|max:255',
             'internal_notes' => 'nullable|string',

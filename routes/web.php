@@ -15,6 +15,7 @@ use App\Http\Controllers\BoardController;
 use App\Http\Controllers\HumanResourcesController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\AreaController;
+use Illuminate\Http\Request;
 
 // 1. CAMBIO PRINCIPAL: Redirección Inteligente
 Route::get('/', function () {
@@ -31,6 +32,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/profile/leaves', [ProfileController::class, 'storeLeave'])->name('profile.leaves.store');
 
     // Gestión Comercial (Cotizaciones)
     Route::resource('quotes', QuoteController::class);
@@ -104,5 +106,131 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Retornamos la vista directamente al navegador
         return view('emails.welcome', compact('user', 'password'));
     });
+
+// Ruta temporal para limpiar permisos (REMOVER DESPUÉS DE USAR)
+Route::get('/admin/fix-permissions', function () {
+    // Solo permitir acceso si el usuario está autenticado y tiene permisos de admin
+    if (!auth()->check() || !auth()->user()->hasPermission('manage_users')) {
+        abort(403, 'No tienes permisos para acceder a esta función.');
+    }
+
+    $users = \App\Models\User::all();
+    $fixedCount = 0;
+    $results = [];
+
+    foreach ($users as $user) {
+        $originalPermissions = $user->getRawOriginal('permissions');
+        $currentPermissions = $user->permissions;
+
+        $needsFix = false;
+        $issues = [];
+
+        // Check if permissions need fixing
+        if (!is_array($currentPermissions)) {
+            $issues[] = 'No es un array (tipo: ' . gettype($currentPermissions) . ')';
+            $needsFix = true;
+        } else {
+            // Check for invalid permission values
+            $validPermissions = ['dashboard', 'quotes', 'projects', 'clients', 'rrhh', 'vehicles', 'areas', 'users', 'manage_users'];
+            $invalidPermissions = array_diff($currentPermissions, $validPermissions);
+
+            if (!empty($invalidPermissions)) {
+                $issues[] = 'Permisos inválidos: ' . implode(', ', $invalidPermissions);
+                $needsFix = true;
+            }
+        }
+
+        if ($needsFix) {
+            // Fix permissions
+            $user->permissions = is_array($currentPermissions) ? 
+                array_intersect($currentPermissions, ['dashboard', 'quotes', 'projects', 'clients', 'rrhh', 'vehicles', 'areas', 'users', 'manage_users']) : 
+                [];
+            $user->save();
+
+            $results[] = [
+                'user' => $user->email,
+                'issues' => $issues,
+                'fixed' => true,
+                'new_permissions' => $user->permissions
+            ];
+            $fixedCount++;
+        }
+    }
+
+    return response()->json([
+        'message' => "Se procesaron {$users->count()} usuarios. Se corrigieron {$fixedCount} usuarios.",
+        'results' => $results,
+        'total_users' => $users->count(),
+        'fixed_users' => $fixedCount
+    ]);
+})->name('admin.fix-permissions');
+
+// Ruta temporal para limpiar permisos del usuario Rtapia específicamente
+Route::get('/admin/fix-rtapia', function () {
+    // Solo permitir acceso si el usuario está autenticado y tiene permisos de admin
+    if (!auth()->check() || !auth()->user()->hasPermission('manage_users')) {
+        abort(403, 'No tienes permisos para acceder a esta función.');
+    }
+
+    $user = \App\Models\User::where('email', 'like', '%rtapia%')->first();
+    
+    if (!$user) {
+        return response()->json(['error' => 'Usuario Rtapia no encontrado']);
+    }
+
+    $originalPermissions = $user->getRawOriginal('permissions');
+    $currentPermissions = $user->permissions;
+
+    // Forzar reset de permisos para asegurar que sea un array limpio
+    $user->permissions = ["dashboard","clients","quotes","projects","users","rrhh","vehicles","manage_users"];
+    $user->save();
+
+    // Refresh para obtener los permisos actualizados
+    $user->refresh();
+
+    return response()->json([
+        'message' => 'Permisos del usuario Rtapia reseteados y limpiados',
+        'user' => $user->email,
+        'original_permissions_raw' => $originalPermissions,
+        'current_permissions' => $user->permissions,
+        'permissions_type' => gettype($user->permissions)
+    ]);
+})->name('admin.fix-rtapia');
+
+// Página web para ejecutar las correcciones
+Route::get('/admin/tools', function () {
+    // Solo permitir acceso si el usuario está autenticado y tiene permisos de admin
+    if (!auth()->check() || !auth()->user()->hasPermission('manage_users')) {
+        abort(403, 'No tienes permisos para acceder a esta página.');
+    }
+
+    return view('admin.tools');
+})->name('admin.tools');
+
+Route::get('/admin/vacation-email', function () {
+    if (!auth()->check() || !auth()->user()->hasPermission('manage_users')) {
+        abort(403, 'No tienes permisos para acceder a esta página.');
+    }
+
+    $path = storage_path('app/vacation_request_recipient.txt');
+    $email = file_exists($path) ? trim(file_get_contents($path)) : '';
+
+    return view('admin.vacation-email', ['vacation_email' => $email]);
+})->name('admin.vacation-email');
+
+Route::post('/admin/vacation-email', function (Request $request) {
+    if (!auth()->check() || !auth()->user()->hasPermission('manage_users')) {
+        abort(403, 'No tienes permisos para acceder a esta página.');
+    }
+
+    $request->validate([
+        'vacation_email' => 'required|email',
+    ]);
+
+    $path = storage_path('app/vacation_request_recipient.txt');
+    file_put_contents($path, $request->vacation_email);
+
+    return back()->with('success', 'Correo de solicitudes de vacaciones actualizado.');
+})->name('admin.vacation-email.save');
 
 require __DIR__.'/auth.php';

@@ -15,6 +15,9 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        if (!auth()->user()->hasPermission('dashboard')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
 
         $columnaDinero = 'total_value';
 

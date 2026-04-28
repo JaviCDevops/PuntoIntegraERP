@@ -56,9 +56,16 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                     </NavLink>
                                 )}
 
-                                {user.permissions && user.permissions.includes('users') && (
+                                {user.permissions && user.permissions.includes('manage_users') && (
                                     <NavLink href={route('users.index')} active={route().current('users.*')}>
                                         Usuarios
+                                    </NavLink>
+                                )}
+
+                                {/* TEMPORAL: Herramientas de Admin */}
+                                {user.permissions && user.permissions.includes('manage_users') && (
+                                    <NavLink href={route('admin.tools')} active={route().current('admin.tools')}>
+                                        🔧 Admin Tools
                                     </NavLink>
                                 )}
                                 
@@ -235,7 +242,12 @@ export default function AuthenticatedLayout({ user, header, children }) {
                                 Usuarios
                             </ResponsiveNavLink>
                         )}
-
+                        {/* TEMPORAL: Herramientas de Admin */}
+                        {user.permissions && user.permissions.includes('manage_users') && (
+                            <ResponsiveNavLink href={route('admin.tools')} active={route().current('admin.tools')}>
+                                🔧 Admin Tools
+                            </ResponsiveNavLink>
+                        )}
                         {user.permissions && user.permissions.includes('rrhh') && (
                             <ResponsiveNavLink href={route('rrhh.index')} active={route().current('rrhh.*')}>
                                 RRHH

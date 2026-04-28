@@ -42,18 +42,29 @@ export default function Index({ auth, projects = [], filters = {} }) {
         oc_number: '', internal_notes: '', start_date: '', deadline: '', milestones: []
     });
 
+    const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const year = date.getUTCFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
+    const toInputDate = (dateString) => {
+        if (!dateString) return '';
+        return dateString.substring(0, 10);
+    };
+
     const openModal = (project) => {
         setCurrentProject(project);
         setMilestoneCount(project.milestones?.length || 1);
-        
-        // Función auxiliar para cortar la hora si viene en formato ISO (2024-01-01T00:00:00)
-        const formatDate = (dateStr) => dateStr ? dateStr.substring(0, 10) : '';
 
         setData({
             oc_number: project.oc_number || '',
             internal_notes: project.internal_notes || '',
-            start_date: formatDate(project.start_date),
-            deadline: formatDate(project.deadline),
+            start_date: toInputDate(project.start_date),
+            deadline: toInputDate(project.deadline),
             milestones: project.milestones?.length > 0 
                 ? project.milestones 
                 : [{ milestone_order: 1, percentage: 100, amount: project.quote?.total_value || 0, invoice_number: '', status: 'PENDIENTE' }]

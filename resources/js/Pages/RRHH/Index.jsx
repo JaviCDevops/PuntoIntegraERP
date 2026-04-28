@@ -14,9 +14,11 @@ export default function Index({ auth, employees, canManageUsers }) {
                     </div>
                     {/* NOTA: Ya no hay botón de "Nuevo Empleado" aquí. 
                         Ahora se crean desde "Usuarios" */}
-                    <div className="text-sm text-gray-500 italic bg-gray-100 px-3 py-1 rounded">
-                        Para ingresar nuevo personal, ve a <Link href={route('users.create')} className="text-indigo-600 font-bold hover:underline">Usuarios</Link>
-                    </div>
+                    {canManageUsers && (
+                        <div className="text-sm text-gray-500 italic bg-gray-100 px-3 py-1 rounded">
+                            Para ingresar nuevo personal, ve a <Link href={route('users.create')} className="text-indigo-600 font-bold hover:underline">Usuarios</Link>
+                        </div>
+                    )}
                 </div>
             }
         >

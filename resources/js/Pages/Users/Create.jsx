@@ -49,8 +49,9 @@ export default function Create({ auth }) {
         { id: 'clients', label: 'Gestión de Clientes' },
         { id: 'rrhh', label: 'Recursos Humanos (RRHH)' }, 
         { id: 'vehicles', label: 'Gestión de Flota (Vehículos)' }, 
-        { id: 'areas', label: 'Gestión de Áreas (Mantenedor)' }, // <--- Permiso Nuevo
+        { id: 'areas', label: 'Gestión de Áreas (Mantenedor)' },
         { id: 'users', label: 'Administrar Usuarios' },
+        { id: 'manage_users', label: '🔑 Gestor de Usuarios (Control Total)' },
     ];
 
     const handleCheckbox = (id) => {

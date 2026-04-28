@@ -22,7 +22,11 @@ class UserController extends Controller
         }
 
         return Inertia::render('Users/Index', [
-            'users' => User::with('employee')->latest()->get(),
+            'users' => User::with('employee')->latest()->get()->map(function ($user) {
+                // Ensure permissions is always an array
+                $user->permissions = is_array($user->permissions) ? $user->permissions : [];
+                return $user;
+            }),
             'canManageUsers' => auth()->user()->hasPermission('manage_users'),
         ]);
     }
@@ -75,7 +79,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'permissions' => 'array',
+            'permissions' => 'nullable|array',
             
             // IMPORTANTE: Quitamos 'unique:employees,rut' para permitir recuperar históricos
             'rut' => 'nullable|string', 
@@ -160,6 +164,9 @@ class UserController extends Controller
             abort(403, 'No tienes permiso para editar usuarios.');
         }
 
+        // Ensure permissions is always an array
+        $user->permissions = is_array($user->permissions) ? $user->permissions : [];
+
         return Inertia::render('Users/Edit', [
             'user' => $user->load('employee') 
         ]);
@@ -175,7 +182,7 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
-            'permissions' => 'array',
+            'permissions' => 'nullable|array',
             
             'rut' => 'nullable|string',
             'position' => 'nullable|string',
@@ -184,10 +191,16 @@ class UserController extends Controller
 
         DB::transaction(function () use ($request, $user) {
             
+            // Ensure permissions is an array
+            $permissions = $request->permissions;
+            if (!is_array($permissions)) {
+                $permissions = [];
+            }
+            
             $userData = [
                 'name' => $request->name,
                 'email' => $request->email,
-                'permissions' => $request->permissions ?? [],
+                'permissions' => $permissions,
             ];
 
             if ($request->filled('password')) {

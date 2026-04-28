@@ -5,8 +5,15 @@ import { useState } from 'react';
 export default function Show({ auth, employee, canManageUsers }) {
     const [activeTab, setActiveTab] = useState('info');
 
-    // --- ELIMINAMOS EL useForm DE PERFIL ---
-    // Ya no editamos aquí, solo mostramos.
+    // --- FORMATO DE FECHA CONSISTENTE (Día/Mes/Año) ---
+    const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const year = date.getUTCFullYear();
+        return `${day}/${month}/${year}`;
+    };
 
     // --- FORMULARIO DE VACACIONES (Se mantiene) ---
     const { data: leaveData, setData: setLeaveData, post: postLeave, reset: resetLeave, errors: leaveErrors } = useForm({
@@ -141,7 +148,7 @@ export default function Show({ auth, employee, canManageUsers }) {
                                             <div className="grid grid-cols-3">
                                                 <span className="text-sm text-gray-500">Fecha Ingreso:</span>
                                                 <span className="col-span-2 text-sm font-medium text-gray-900">
-                                                    {employee.hire_date ? new Date(employee.hire_date).toLocaleDateString() : '-'}
+                                                    {employee.hire_date ? formatDate(employee.hire_date) : '-'}
                                                 </span>
                                             </div>
                                             <div className="grid grid-cols-3">
@@ -245,7 +252,7 @@ export default function Show({ auth, employee, canManageUsers }) {
                                                         <tr key={leave.id} className="hover:bg-gray-50">
                                                             <td className="px-4 py-3 capitalize">{leave.type}</td>
                                                             <td className="px-4 py-3 text-gray-600">
-                                                                {new Date(leave.start_date).toLocaleDateString()} <span className="text-gray-400">➜</span> {new Date(leave.end_date).toLocaleDateString()}
+                                                                {formatDate(leave.start_date)} <span className="text-gray-400">➜</span> {formatDate(leave.end_date)}
                                                             </td>
                                                             <td className="px-4 py-3 text-center">
                                                                 <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide
@@ -344,7 +351,7 @@ export default function Show({ auth, employee, canManageUsers }) {
                                                         <div>
                                                             <div className="font-bold text-sm text-gray-800 truncate max-w-[150px]">{doc.name}</div>
                                                             <div className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">{doc.type}</div>
-                                                            <div className="text-[10px] text-gray-400">{new Date(doc.created_at).toLocaleDateString()}</div>
+                                                            <div className="text-[10px] text-gray-400">{formatDate(doc.created_at)}</div>
                                                         </div>
                                                     </div>
                                                     <a href={`/storage/${doc.file_path}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-xs font-bold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition">

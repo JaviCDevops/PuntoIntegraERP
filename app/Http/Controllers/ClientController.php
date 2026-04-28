@@ -10,6 +10,11 @@ class ClientController extends Controller
 {
     public function index(Request $request)
     {
+        // Verificar permiso para acceder al módulo de clientes
+        if (!auth()->user()->hasPermission('clients')) {
+            abort(403, 'No tienes permiso para acceder al módulo de clientes.');
+        }
+
         $query = Client::query();
 
         if ($request->search) {
@@ -25,11 +30,21 @@ class ClientController extends Controller
 
     public function create()
     {
+        // Verificar permiso para crear clientes
+        if (!auth()->user()->hasPermission('clients')) {
+            abort(403, 'No tienes permiso para crear clientes.');
+        }
+
         return Inertia::render('Clients/Create');
     }
 
     public function store(Request $request)
     {
+        // Verificar permiso para crear clientes
+        if (!auth()->user()->hasPermission('clients')) {
+            abort(403, 'No tienes permiso para crear clientes.');
+        }
+
         $validated = $request->validate([
             'rut' => 'required|unique:clients,rut|max:12',
             'razon_social' => 'required|string|max:255',
@@ -47,6 +62,11 @@ class ClientController extends Controller
 
     public function edit(Client $client)
     {
+        // Verificar permiso para editar clientes
+        if (!auth()->user()->hasPermission('clients')) {
+            abort(403, 'No tienes permiso para editar clientes.');
+        }
+
         return Inertia::render('Clients/Edit', [
             'client' => $client
         ]);
@@ -54,6 +74,11 @@ class ClientController extends Controller
 
     public function update(Request $request, Client $client)
     {
+        // Verificar permiso para actualizar clientes
+        if (!auth()->user()->hasPermission('clients')) {
+            abort(403, 'No tienes permiso para actualizar clientes.');
+        }
+
         $validated = $request->validate([
             'rut' => 'required|max:12|unique:clients,rut,' . $client->id, 
             'razon_social' => 'required|string|max:255',
@@ -71,6 +96,11 @@ class ClientController extends Controller
 
     public function destroy(Client $client)
     {
+        // Verificar permiso para eliminar clientes
+        if (!auth()->user()->hasPermission('clients')) {
+            abort(403, 'No tienes permiso para eliminar clientes.');
+        }
+
         $client->delete();
         return back()->with('success', 'Cliente eliminado.');
     }

@@ -28,13 +28,53 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'permissions' => 'array', // Esto es vital para tus permisos
+            // 'permissions' => 'array', // Removemos el cast automático
         ];
+    }
+
+    // Mutator personalizado para permissions
+    public function setPermissionsAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['permissions'] = json_encode($value);
+        } elseif (is_string($value)) {
+            // Si ya es string, asumimos que es JSON válido
+            $this->attributes['permissions'] = $value;
+        } else {
+            // Para cualquier otro caso, guardamos array vacío
+            $this->attributes['permissions'] = json_encode([]);
+        }
+    }
+
+    // Accessor personalizado para permissions
+    public function getPermissionsAttribute($value)
+    {
+        if (is_null($value)) {
+            return [];
+        }
+        
+        if (is_array($value)) {
+            return $value;
+        }
+        
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        
+        return [];
     }
 
     public function hasPermission($permission)
     {
-        return in_array($permission, $this->permissions ?? []);
+        $permissions = $this->permissions;
+        
+        // Ensure permissions is an array
+        if (!is_array($permissions)) {
+            $permissions = [];
+        }
+        
+        return in_array($permission, $permissions);
     }
 
     public function items() 

@@ -13,6 +13,10 @@ class AreaController extends Controller
      */
     public function index()
     {
+        if (!auth()->user()->hasPermission('areas')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         // Obtenemos todas las áreas ordenadas alfabéticamente
         $areas = Area::orderBy('name', 'asc')->get();
 
@@ -26,6 +30,10 @@ class AreaController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->hasPermission('areas')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         // Validamos que el nombre sea obligatorio y único
         $request->validate([
             'name' => 'required|string|max:255|unique:areas,name',
@@ -44,6 +52,10 @@ class AreaController extends Controller
      */
     public function update(Request $request, Area $area)
     {
+        if (!auth()->user()->hasPermission('areas')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         // Validamos el nombre, pero ignoramos el ID actual para que no de error de "ya existe" si no cambiamos el nombre
         $request->validate([
             'name' => 'required|string|max:255|unique:areas,name,' . $area->id,
@@ -61,6 +73,10 @@ class AreaController extends Controller
      */
     public function destroy(Area $area)
     {
+        if (!auth()->user()->hasPermission('areas')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
         // Aquí podrías agregar validación extra:
         // if ($area->projects()->count() > 0) { return back()->with('error', 'No se puede eliminar porque tiene proyectos asociados'); }
 

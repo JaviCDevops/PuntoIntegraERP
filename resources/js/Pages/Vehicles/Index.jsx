@@ -12,6 +12,16 @@ export default function Index({ auth, vehicles }) {
     const [activeTab, setActiveTab] = useState('info'); 
     const [currentVehicle, setCurrentVehicle] = useState(null);
 
+    // --- FORMATO DE FECHA CONSISTENTE (Día/Mes/Año) ---
+    const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const year = date.getUTCFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
     const activeVehicle = currentVehicle ? vehicles.find(v => v.id === currentVehicle.id) || currentVehicle : null;
 
     const { data, setData, post, put, reset, processing, errors } = useForm({
@@ -343,7 +353,7 @@ export default function Index({ auth, vehicles }) {
                                             <div key={doc.id} className="bg-white p-4 rounded shadow border-l-4 border-gray-300 flex justify-between items-center group hover:border-blue-400 transition">
                                                 <div className="flex-1">
                                                     <h5 className="font-bold text-gray-800 text-sm">{doc.document_type}</h5>
-                                                    {doc.expiration_date ? <p className="text-xs text-gray-500 mt-1">Vence: {doc.expiration_date}</p> : <p className="text-xs text-gray-400 mt-1 italic">Sin vencimiento</p>}
+                                                    {doc.expiration_date ? <p className="text-xs text-gray-500 mt-1">Vence: {formatDate(doc.expiration_date)}</p> : <p className="text-xs text-gray-400 mt-1 italic">Sin vencimiento</p>}
                                                     <div className="mt-2 flex items-center gap-2">
                                                         {getDocStatusBadge(doc.status)}
                                                         {doc.file_path && <a href={`/storage/${doc.file_path}`} target="_blank" rel="noopener noreferrer" className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-200 hover:bg-blue-100 flex items-center gap-1">📄 Ver Archivo</a>}

@@ -9,7 +9,7 @@ export default function Edit({ auth, user }) {
         email: user.email, 
         password: '', 
         password_confirmation: '',
-        permissions: user.permissions || [],
+        permissions: Array.isArray(user.permissions) ? user.permissions : [],
 
         // Datos de Empleado (Usamos optional chaining ?. por si el usuario no es empleado aún)
         rut: user.employee?.rut || '',
@@ -28,10 +28,11 @@ export default function Edit({ auth, user }) {
         { id: 'quotes', label: 'Gestión Comercial (Cotizaciones)' },
         { id: 'projects', label: 'Gestión de Proyectos' },
         { id: 'clients', label: 'Gestión de Clientes' },
-        { id: 'rrhh', label: 'Recursos Humanos (RRHH)' },
-        { id: 'vehicles', label: 'Gestión de Flota (Vehículos)' },
-        { id: 'areas', label: 'Gestión de Áreas (Mantenedor)' }, // <--- AGREGADO AQUÍ
+        { id: 'rrhh', label: 'Recursos Humanos' },
+        { id: 'vehicles', label: 'Gestión de Flota' },
+        { id: 'areas', label: 'Gestión de Áreas' },
         { id: 'users', label: 'Administrar Usuarios' },
+        { id: 'manage_users', label: 'Gestor de Usuarios' },
     ];
 
     const handleCheckbox = (id) => {

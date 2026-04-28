@@ -16,6 +16,11 @@ class QuoteController extends Controller
 {
     public function index(Request $request)
     {
+        // Verificar permiso para acceder al módulo
+        if (!auth()->user()->hasPermission('quotes')) {
+            abort(403, 'No tienes permiso para acceder al módulo de cotizaciones.');
+        }
+
         $query = Quote::with('client');
 
         // 1. Filtro por Código
@@ -62,6 +67,11 @@ class QuoteController extends Controller
 
     public function create()
     {
+        // Verificar permiso para crear cotizaciones
+        if (!auth()->user()->hasPermission('quotes')) {
+            abort(403, 'No tienes permiso para crear cotizaciones.');
+        }
+
         return Inertia::render('Quotes/Create', [
             'clients' => Client::all(),
             'areas' => Area::where('is_active', true)->get() 
@@ -70,6 +80,11 @@ class QuoteController extends Controller
 
     public function store(Request $request)
     {
+        // Verificar permiso para crear cotizaciones
+        if (!auth()->user()->hasPermission('quotes')) {
+            abort(403, 'No tienes permiso para crear cotizaciones.');
+        }
+
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
             'area' => 'required|string|exists:areas,name', 
@@ -116,6 +131,11 @@ class QuoteController extends Controller
     // --- Opción 1: Adjudicar vía Botón dedicado ---
     public function adjudicate(Quote $quote)
     {
+        // Verificar permiso para gestionar cotizaciones
+        if (!auth()->user()->hasPermission('quotes')) {
+            abort(403, 'No tienes permiso para gestionar cotizaciones.');
+        }
+
         if ($quote->status === 'adjudicada') {
             return back()->with('error', 'Esta cotización ya está adjudicada.');
         }
@@ -155,6 +175,11 @@ class QuoteController extends Controller
     // --- Opción 2: Adjudicar vía Dropdown (Cambio de Estado) ---
     public function updateStatus(Request $request, Quote $quote)
     {
+        // Verificar permiso para gestionar cotizaciones
+        if (!auth()->user()->hasPermission('quotes')) {
+            abort(403, 'No tienes permiso para gestionar cotizaciones.');
+        }
+
         $request->validate(['status' => 'required|in:pendiente,enviada,adjudicada,perdida']);
 
         if ($request->status === 'adjudicada' && $quote->project()->exists()) {
@@ -216,6 +241,11 @@ class QuoteController extends Controller
 
     public function edit(Quote $quote)
     {
+        // Verificar permiso para editar cotizaciones
+        if (!auth()->user()->hasPermission('quotes')) {
+            abort(403, 'No tienes permiso para editar cotizaciones.');
+        }
+
         if ($quote->status === 'adjudicada' || $quote->status === 'perdida') {
             return redirect()->route('quotes.index')->with('error', 'No se pueden editar cotizaciones cerradas.');
         }
@@ -229,6 +259,11 @@ class QuoteController extends Controller
 
     public function update(Request $request, Quote $quote)
     {
+        // Verificar permiso para actualizar cotizaciones
+        if (!auth()->user()->hasPermission('quotes')) {
+            abort(403, 'No tienes permiso para actualizar cotizaciones.');
+        }
+
         $validated = $request->validate([
             'client_id' => 'required|exists:clients,id',
             'area' => 'required|string|exists:areas,name',
@@ -257,12 +292,22 @@ class QuoteController extends Controller
 
     public function pdf(Quote $quote)
     {
+        // Verificar permiso para ver cotizaciones
+        if (!auth()->user()->hasPermission('quotes')) {
+            abort(403, 'No tienes permiso para ver cotizaciones.');
+        }
+
         $pdf = Pdf::loadView('pdf.quote', compact('quote'));
         return $pdf->stream("Cotizacion_{$quote->code}.pdf");
     }
 
     public function destroy(Quote $quote)
     {
+        // Verificar permiso para eliminar cotizaciones
+        if (!auth()->user()->hasPermission('quotes')) {
+            abort(403, 'No tienes permiso para eliminar cotizaciones.');
+        }
+
         // Borramos el proyecto asociado si existe para evitar huérfanos
         if ($quote->project()->exists()) {
             $quote->project->delete();
