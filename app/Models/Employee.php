@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\WorkingDaysService;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
@@ -33,12 +34,17 @@ class Employee extends Model
 
         $totalAccrued = $monthsWorked * 1.25;
 
+        $workingDaysSvc = new WorkingDaysService();
+
         $daysTaken = $this->leaves()
             ->where('type', 'vacaciones')
             ->where('status', 'aprobada')
             ->get()
-            ->sum(function($leave) {
-                return Carbon::parse($leave->start_date)->diffInDays(Carbon::parse($leave->end_date)) + 1;
+            ->sum(function ($leave) use ($workingDaysSvc) {
+                return $workingDaysSvc->countWorkingDays(
+                    Carbon::parse($leave->start_date),
+                    Carbon::parse($leave->end_date)
+                );
             });
 
         return round($totalAccrued - $daysTaken, 2);

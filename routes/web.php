@@ -13,6 +13,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\HumanResourcesController;
+use App\Http\Controllers\PublicHolidayController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\AreaController;
 use Illuminate\Http\Request;
@@ -88,7 +89,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('areas', AreaController::class);
 
-
+    // Feriados (solo admin)
+    Route::prefix('feriados')->name('holidays.')->group(function () {
+        Route::get('/', [PublicHolidayController::class, 'index'])->name('index');
+        Route::post('/', [PublicHolidayController::class, 'store'])->name('store');
+        Route::delete('/{holiday}', [PublicHolidayController::class, 'destroy'])->name('destroy');
+        Route::post('/sync', [PublicHolidayController::class, 'sync'])->name('sync');
+    });
 
 });
 
