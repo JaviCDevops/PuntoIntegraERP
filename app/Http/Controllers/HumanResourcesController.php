@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Carbon\Carbon;
+use App\Services\WorkingDaysService;
 
 class HumanResourcesController extends Controller
 {
@@ -90,9 +92,12 @@ class HumanResourcesController extends Controller
             'documents' => fn ($query) => $query->latest(),
             'leaves' => fn ($query) => $query->latest('start_date'),
         ])->append('vacation_balance');
-        
+
+        $vacationPeriods = $this->getVacationPeriods($employee);
+
         return Inertia::render('RRHH/Show', [
             'employee' => $employee,
+            'vacationPeriods' => $vacationPeriods,
             'canManageUsers' => $user->hasPermission('manage_users'),
         ]);
     }
@@ -249,5 +254,63 @@ class HumanResourcesController extends Controller
         }
 
         Mail::to($employeeEmail)->send(new LeaveRequestStatusMail($leave));
+    }
+
+    /**
+     * Calcula los periodos anuales de vacaciones desde la fecha de contrato.
+     * Cada periodo comienza en el aniversario de contratación.
+     */
+    private function getVacationPeriods(Employee $employee): array
+    {
+        if (!$employee->hire_date) {
+            return [];
+        }
+
+        $workingDaysSvc = new WorkingDaysService();
+        $hireDate = $employee->hire_date->copy()->startOfDay();
+        $now = Carbon::now()->startOfDay();
+        $periods = [];
+        $yearIndex = 0;
+
+        while (true) {
+            $periodStart = $hireDate->copy()->addYears($yearIndex);
+            $periodEnd = $hireDate->copy()->addYears($yearIndex + 1)->subDay()->endOfDay();
+
+            if ($periodStart->greaterThan($now)) {
+                break;
+            }
+
+            $taken = $employee->leaves()
+                ->where('type', 'vacaciones')
+                ->where('status', 'aprobada')
+                ->whereDate('start_date', '>=', $periodStart)
+                ->whereDate('start_date', '<=', $periodEnd)
+                ->get()
+                ->sum(function ($leave) use ($workingDaysSvc) {
+                    return $workingDaysSvc->countWorkingDays(
+                        Carbon::parse($leave->start_date),
+                        Carbon::parse($leave->end_date)
+                    );
+                });
+
+            $periods[] = [
+                'year_index' => $yearIndex + 1,
+                'period_start' => $periodStart->format('d/m/Y'),
+                'period_end' => $periodEnd->format('d/m/Y'),
+                'earned' => 15,
+                'taken' => $taken,
+                'balance' => 15 - $taken,
+                'is_current' => $now->between($periodStart, $periodEnd),
+            ];
+
+            $yearIndex++;
+
+            // Límite de seguridad para evitar bucles infinitos
+            if ($yearIndex > 50) {
+                break;
+            }
+        }
+
+        return $periods;
     }
 }

@@ -30,7 +30,8 @@ class Employee extends Model
     {
         if (!$this->hire_date) return 0;
 
-        $monthsWorked = $this->hire_date->diffInMonths(now());
+        // Se usan meses completos trabajados para evitar discrepancias de días.
+        $monthsWorked = floor($this->hire_date->diffInMonths(now()));
 
         $totalAccrued = $monthsWorked * 1.25;
 

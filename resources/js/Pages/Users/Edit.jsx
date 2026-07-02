@@ -158,12 +158,12 @@ export default function Edit({ auth, user }) {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700">Fecha de Contrato</label>
-                                    <input type="date" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} className="w-full rounded border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" />
+                                    <input type="date" lang="es-CL" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} className="w-full rounded border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" />
                                     {errors.hire_date && <div className="text-red-500 text-xs mt-1">{errors.hire_date}</div>}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700">Fecha de Nacimiento</label>
-                                    <input type="date" value={data.birth_date} onChange={e => setData('birth_date', e.target.value)} className="w-full rounded border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" />
+                                    <input type="date" lang="es-CL" value={data.birth_date} onChange={e => setData('birth_date', e.target.value)} className="w-full rounded border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" />
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-bold text-gray-700">Dirección</label>

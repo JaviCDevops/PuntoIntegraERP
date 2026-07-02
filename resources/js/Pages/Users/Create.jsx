@@ -3,6 +3,8 @@ import { Head, useForm, Link } from '@inertiajs/react';
 import axios from 'axios'; // Necesario para consultar el RUT en vivo
 
 export default function Create({ auth }) {
+    const [emailManuallyEdited, setEmailManuallyEdited] = useState(false);
+
     const { data, setData, post, processing, errors } = useForm({
         // Datos de Identificación y RRHH
         rut: '', 
@@ -21,6 +23,31 @@ export default function Create({ auth }) {
         password_confirmation: '',
         permissions: [],
     });
+
+    // --- LÓGICA: GENERAR EMAIL SUGERIDO ---
+    const generateSuggestedEmail = (fullName) => {
+        if (!fullName || fullName.trim().length < 3) return '';
+        const parts = fullName.trim().split(/\s+/).filter(Boolean);
+        if (parts.length === 0) return '';
+
+        const firstName = parts[0];
+        const lastName = parts[parts.length - 1];
+        const prefix = parts.length === 1 ? firstName : firstName.charAt(0) + lastName;
+
+        const clean = prefix
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '');
+
+        return `${clean}@puntointegra.cl`;
+    };
+
+    const handleNameBlur = () => {
+        if (!emailManuallyEdited && !data.email && data.name.trim()) {
+            setData('email', generateSuggestedEmail(data.name));
+        }
+    };
 
     // --- LÓGICA: CONSULTAR HISTORIAL DE RUT ---
     const checkRutHistory = async (rutValue) => {
@@ -103,12 +130,13 @@ export default function Create({ auth }) {
                                     <label className="block text-sm font-bold text-gray-700">
                                         Nombre Completo <span className="text-red-500">*</span>
                                     </label>
-                                    <input 
-                                        type="text" 
-                                        value={data.name} 
-                                        onChange={e => setData('name', e.target.value)} 
-                                        className="w-full rounded border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" 
-                                        required 
+                                    <input
+                                        type="text"
+                                        value={data.name}
+                                        onChange={e => setData('name', e.target.value)}
+                                        onBlur={handleNameBlur}
+                                        className="w-full rounded border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                        required
                                     />
                                     {errors.name && <div className="text-red-500 text-xs mt-1">{errors.name}</div>}
                                 </div>
@@ -126,12 +154,15 @@ export default function Create({ auth }) {
                                     <label className="block text-sm font-bold text-gray-700">
                                         Email (Login) <span className="text-red-500">*</span>
                                     </label>
-                                    <input 
-                                        type="email" 
-                                        value={data.email} 
-                                        onChange={e => setData('email', e.target.value)} 
-                                        className="w-full rounded border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" 
-                                        required 
+                                    <input
+                                        type="email"
+                                        value={data.email}
+                                        onChange={e => {
+                                            setEmailManuallyEdited(true);
+                                            setData('email', e.target.value);
+                                        }}
+                                        className="w-full rounded border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                        required
                                     />
                                     {errors.email && <div className="text-red-500 text-xs mt-1">{errors.email}</div>}
                                 </div>
@@ -177,11 +208,11 @@ export default function Create({ auth }) {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700">Fecha Contrato</label>
-                                    <input type="date" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} className="w-full rounded border-gray-300 shadow-sm" />
+                                    <input type="date" lang="es-CL" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} className="w-full rounded border-gray-300 shadow-sm" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700">Nacimiento</label>
-                                    <input type="date" value={data.birth_date} onChange={e => setData('birth_date', e.target.value)} className="w-full rounded border-gray-300 shadow-sm" />
+                                    <input type="date" lang="es-CL" value={data.birth_date} onChange={e => setData('birth_date', e.target.value)} className="w-full rounded border-gray-300 shadow-sm" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700">Teléfono</label>

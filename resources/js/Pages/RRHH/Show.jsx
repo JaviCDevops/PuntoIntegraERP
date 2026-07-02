@@ -2,7 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router, Link } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function Show({ auth, employee, canManageUsers }) {
+export default function Show({ auth, employee, canManageUsers, vacationPeriods = [] }) {
     const [activeTab, setActiveTab] = useState('info');
 
     // --- FORMATO DE FECHA CONSISTENTE (Día/Mes/Año) ---
@@ -189,8 +189,44 @@ export default function Show({ auth, employee, canManageUsers }) {
 
                         {/* --- TAB 2: VACACIONES (FUNCIONAL) --- */}
                         {activeTab === 'vacations' && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
-                                {/* Formulario */}
+                            <div className="space-y-6 animate-fade-in">
+                                {/* Resumen por Periodo */}
+                                {vacationPeriods.length > 0 && (
+                                    <div className="bg-white border border-blue-200 rounded-lg p-5 shadow-sm">
+                                        <h4 className="font-bold text-blue-800 mb-4 flex items-center gap-2">
+                                            <span>📊</span> Resumen de Vacaciones por Periodo
+                                        </h4>
+                                        <div className="overflow-x-auto">
+                                            <table className="min-w-full text-sm divide-y divide-gray-200">
+                                                <thead className="bg-blue-50">
+                                                    <tr>
+                                                        <th className="px-4 py-2 text-left font-bold text-gray-500">Periodo</th>
+                                                        <th className="px-4 py-2 text-center font-bold text-gray-500">Días Ganados</th>
+                                                        <th className="px-4 py-2 text-center font-bold text-gray-500">Días Tomados</th>
+                                                        <th className="px-4 py-2 text-center font-bold text-gray-500">Saldo</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white divide-y divide-gray-100">
+                                                    {vacationPeriods.map((period, idx) => (
+                                                        <tr key={idx} className={period.is_current ? 'bg-blue-50/50' : ''}>
+                                                            <td className="px-4 py-3 text-gray-700">
+                                                                <span className="font-bold">Año {period.year_index}</span>
+                                                                <span className="text-xs text-gray-500 ml-2">({period.period_start} - {period.period_end})</span>
+                                                                {period.is_current && <span className="ml-2 text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded">Actual</span>}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-center font-medium text-gray-700">{period.earned}</td>
+                                                            <td className="px-4 py-3 text-center font-medium text-gray-700">{period.taken}</td>
+                                                            <td className={`px-4 py-3 text-center font-bold ${period.balance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{period.balance}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {/* Formulario */}
                                 <div className="bg-gray-50 p-5 rounded-lg border border-gray-200 h-fit">
                                     <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
                                         <span>📅</span> Registrar Ausencia
@@ -240,19 +276,23 @@ export default function Show({ auth, employee, canManageUsers }) {
                                                 <tr>
                                                     <th className="px-4 py-2 text-left font-bold text-gray-500">Tipo</th>
                                                     <th className="px-4 py-2 text-left font-bold text-gray-500">Periodo</th>
+                                                    <th className="px-4 py-2 text-center font-bold text-gray-500">Días</th>
                                                     <th className="px-4 py-2 text-center font-bold text-gray-500">Estado</th>
                                                     <th className="px-4 py-2 text-right font-bold text-gray-500">Acción</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-100">
                                                 {employee.leaves.length === 0 ? (
-                                                    <tr><td colSpan="4" className="p-4 text-center text-gray-400 italic">No hay registros</td></tr>
+                                                    <tr><td colSpan="5" className="p-4 text-center text-gray-400 italic">No hay registros</td></tr>
                                                 ) : (
                                                     employee.leaves.map(leave => (
                                                         <tr key={leave.id} className="hover:bg-gray-50">
                                                             <td className="px-4 py-3 capitalize">{leave.type}</td>
                                                             <td className="px-4 py-3 text-gray-600">
                                                                 {formatDate(leave.start_date)} <span className="text-gray-400">➜</span> {formatDate(leave.end_date)}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-center font-bold text-gray-700">
+                                                                {leave.days ?? '-'}
                                                             </td>
                                                             <td className="px-4 py-3 text-center">
                                                                 <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide
@@ -285,6 +325,7 @@ export default function Show({ auth, employee, canManageUsers }) {
                                     </div>
                                 </div>
                             </div>
+                        </div>
                         )}
 
                         {/* --- TAB 3: DOCUMENTOS (FUNCIONAL) --- */}
