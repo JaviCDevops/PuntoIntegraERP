@@ -1,7 +1,17 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import {
+    clampPercentage,
+    distributePercentagesEqually,
+    getMilestoneTotal,
+    getMilestoneValidationMessage,
+    isMilestoneTotalValid,
+    normalizePercentagesTo100,
+    parseNonNegative,
+    syncMilestoneAmount,
+} from '@/utils/milestoneHelpers';
 
 const ListIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>;
 const KanbanIcon = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>;
@@ -17,9 +27,7 @@ export default function Index({ auth, projects = [], filters = {} }) {
     const [searchCode, setSearchCode] = useState(filters.search_code || '');
     const [searchClient, setSearchClient] = useState(filters.search_client || '');
     const [searchStatus, setSearchStatus] = useState(filters.search_status || 'todos');
-
-    // Rastrear qué campo está siendo editado actualmente para evitar sobrescrituras
-    const [editingMilestone, setEditingMilestone] = useState(null); // { index, field }
+    const [milestoneValidationError, setMilestoneValidationError] = useState(null);
 
     const kanbanColumns = {
         'activo':     { title: 'En Proceso', color: 'border-blue-500', bg: 'bg-blue-50' },
@@ -42,19 +50,12 @@ export default function Index({ auth, projects = [], filters = {} }) {
         oc_number: '', internal_notes: '', start_date: '', deadline: '', milestones: []
     });
 
-    const clampPercentage = (value) => {
-        const num = parseFloat(value);
-        if (Number.isNaN(num)) return 0;
-        return Math.max(0, Math.min(100, num));
-    };
-
-    const getMilestoneTotal = (milestones) =>
-        milestones.reduce((sum, ms) => sum + parseFloat(ms.percentage || 0), 0);
-
-    const syncMilestoneAmount = (milestone, totalProjectValue) => {
-        if (totalProjectValue <= 0) return milestone.amount || 0;
-        return (totalProjectValue * (parseFloat(milestone.percentage || 0) / 100)).toFixed(2);
-    };
+    const milestoneTotal = useMemo(() => getMilestoneTotal(data.milestones), [data.milestones]);
+    const milestonesAreValid = useMemo(() => isMilestoneTotalValid(data.milestones), [data.milestones]);
+    const milestoneValidationMessage = useMemo(
+        () => milestoneValidationError || errors.milestones || getMilestoneValidationMessage(data.milestones),
+        [milestoneValidationError, errors.milestones, data.milestones]
+    );
 
     const formatDate = (dateString) => {
         if (!dateString) return '-';
@@ -72,16 +73,29 @@ export default function Index({ auth, projects = [], filters = {} }) {
 
     const openModal = (project) => {
         setCurrentProject(project);
-        setMilestoneCount(project.milestones?.length || 1);
+        const totalProjectValue = parseFloat(project.quote?.total_value || 0);
+        const count = project.milestones?.length || 1;
+        setMilestoneCount(count);
+        setMilestoneValidationError(null);
+
+        let milestones = project.milestones?.length > 0
+            ? project.milestones.map((ms) => ({
+                ...ms,
+                percentage: clampPercentage(ms.percentage),
+                amount: parseNonNegative(ms.amount) ?? ms.amount ?? 0,
+            }))
+            : distributePercentagesEqually(1, totalProjectValue);
+
+        if (!isMilestoneTotalValid(milestones)) {
+            milestones = distributePercentagesEqually(count, totalProjectValue, milestones);
+        }
 
         setData({
             oc_number: project.oc_number || '',
             internal_notes: project.internal_notes || '',
             start_date: toInputDate(project.start_date),
             deadline: toInputDate(project.deadline),
-            milestones: project.milestones?.length > 0 
-                ? project.milestones 
-                : [{ milestone_order: 1, percentage: 100, amount: project.quote?.total_value || 0, invoice_number: '', status: 'PENDIENTE' }]
+            milestones,
         });
         setIsModalOpen(true);
     };
@@ -101,99 +115,59 @@ export default function Index({ auth, projects = [], filters = {} }) {
     };
 
     const handleMilestoneCountChange = (e) => {
-        const count = parseInt(e.target.value) || 1;
+        const count = Math.max(1, Math.min(12, parseInt(e.target.value, 10) || 1));
         setMilestoneCount(count);
-        const totalProjectValue = parseFloat(currentProject?.quote?.total_value || 0);
+        setMilestoneValidationError(null);
 
-        // Distribuir el 100% equitativamente entre todos los pagos
-        const basePercentage = parseFloat((100 / count).toFixed(2));
-        const newMilestones = Array.from({ length: count }, (_, i) => {
-            const existing = data.milestones[i] || {};
-            const percentage = i === count - 1
-                ? parseFloat((100 - (basePercentage * (count - 1))).toFixed(2))
-                : basePercentage;
-            return {
-                milestone_order: i + 1,
-                percentage: percentage,
-                amount: totalProjectValue > 0 ? (totalProjectValue * (percentage / 100)).toFixed(2) : (existing.amount || 0),
-                invoice_number: existing.invoice_number || '',
-                status: existing.status || 'PENDIENTE'
-            };
-        });
-        setData('milestones', newMilestones);
+        const totalProjectValue = parseFloat(currentProject?.quote?.total_value || 0);
+        setData('milestones', distributePercentagesEqually(count, totalProjectValue, data.milestones));
     };
 
     const updateMilestone = (index, field, value) => {
+        setMilestoneValidationError(null);
         const newMilestones = [...data.milestones];
         const totalProjectValue = parseFloat(currentProject?.quote?.total_value || 0);
 
         if (field === 'percentage') {
-            const clamped = clampPercentage(value);
+            if (value !== '' && parseNonNegative(value) === null) return;
+            const clamped = value === '' ? '' : clampPercentage(value);
             newMilestones[index].percentage = clamped;
-            newMilestones[index].amount = syncMilestoneAmount(newMilestones[index], totalProjectValue);
+            if (clamped !== '') {
+                newMilestones[index].amount = syncMilestoneAmount(newMilestones[index], totalProjectValue);
+            }
         } else if (field === 'amount') {
+            if (value !== '' && parseNonNegative(value) === null) return;
             newMilestones[index].amount = value;
-            if (value && totalProjectValue > 0) {
+            const parsed = parseNonNegative(value);
+            if (parsed !== null && totalProjectValue > 0) {
                 newMilestones[index].percentage = clampPercentage(
-                    ((parseFloat(value) / totalProjectValue) * 100).toFixed(2)
+                    ((parsed / totalProjectValue) * 100).toFixed(2)
                 );
             }
         } else {
             newMilestones[index][field] = value;
         }
 
-        setEditingMilestone({ index, field });
         setData('milestones', newMilestones);
     };
 
-    // Ajusta el hito "compañero" para que el total sea siempre 100%.
-    // Ej: si hay 2 pagos y el primero es 70%, el segundo queda en 30%.
     const normalizePercentages = (editedIndex) => {
-        const newMilestones = [...data.milestones];
-        const count = newMilestones.length;
         const totalProjectValue = parseFloat(currentProject?.quote?.total_value || 0);
-
-        if (count <= 1) {
-            newMilestones[0].percentage = 100;
-            newMilestones[0].amount = syncMilestoneAmount(newMilestones[0], totalProjectValue);
-            setData('milestones', newMilestones);
-            setEditingMilestone(null);
-            return;
-        }
-
-        const editedValue = clampPercentage(newMilestones[editedIndex].percentage);
-        newMilestones[editedIndex].percentage = editedValue;
-        newMilestones[editedIndex].amount = syncMilestoneAmount(newMilestones[editedIndex], totalProjectValue);
-
-        let targetIndex = count - 1;
-        if (editedIndex === targetIndex) {
-            targetIndex = 0;
-        }
-
-        const sumFixedOthers = newMilestones.reduce((sum, ms, i) => {
-            if (i === editedIndex || i === targetIndex) return sum;
-            return sum + clampPercentage(ms.percentage);
-        }, 0);
-
-        let remaining = parseFloat((100 - editedValue - sumFixedOthers).toFixed(2));
-        remaining = Math.max(0, Math.min(100, remaining));
-
-        newMilestones[targetIndex].percentage = remaining;
-        newMilestones[targetIndex].amount = syncMilestoneAmount(newMilestones[targetIndex], totalProjectValue);
-
-        setData('milestones', newMilestones);
-        setEditingMilestone(null);
+        const normalized = normalizePercentagesTo100(data.milestones, editedIndex, totalProjectValue);
+        setData('milestones', normalized);
+        setMilestoneValidationError(getMilestoneValidationMessage(normalized));
     };
 
     const submit = (e) => {
         e.preventDefault();
 
-        const total = getMilestoneTotal(data.milestones);
-        if (data.milestones.length > 0 && Math.abs(total - 100) > 0.01) {
-            alert(`Los porcentajes deben sumar exactamente 100%. Actualmente suman ${total.toFixed(2)}%.`);
+        const validationMessage = getMilestoneValidationMessage(data.milestones);
+        if (validationMessage) {
+            setMilestoneValidationError(validationMessage);
             return;
         }
 
+        setMilestoneValidationError(null);
         put(route('projects.update', currentProject.id), { onSuccess: () => setIsModalOpen(false) });
     };
 
@@ -488,15 +462,16 @@ export default function Index({ auth, projects = [], filters = {} }) {
                                     <span className="text-xs text-gray-400">(Reinicia los montos al cambiar)</span>
                                 </div>
                                 <div className="space-y-3">
-                                    {errors.milestones && (
+                                    {milestoneValidationMessage && (
                                         <p className="text-sm text-red-600 font-semibold bg-red-50 border border-red-200 rounded p-2">
-                                            {errors.milestones}
+                                            {milestoneValidationMessage}
                                         </p>
                                     )}
-                                    <div className="text-xs text-gray-500 text-right">
-                                        Total: <span className={`font-bold ${Math.abs(getMilestoneTotal(data.milestones) - 100) <= 0.01 ? 'text-green-600' : 'text-red-600'}`}>
-                                            {getMilestoneTotal(data.milestones).toFixed(2)}%
-                                        </span>
+                                    <div className={`text-xs text-right p-2 rounded border ${milestonesAreValid ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                                        Total porcentajes: <span className="font-bold">{milestoneTotal.toFixed(2)}%</span>
+                                        {milestonesAreValid
+                                            ? ' — Listo para guardar'
+                                            : ` — Debe ser exactamente 100%`}
                                     </div>
                                     {data.milestones.map((ms, index) => (
                                         <div key={index} className="flex items-end space-x-2 bg-gray-50 p-2 rounded border border-gray-200">
@@ -509,8 +484,9 @@ export default function Index({ auth, projects = [], filters = {} }) {
                                                     required
                                                     min="0"
                                                     max="100"
-                                                    step="0.01"
+                                                    step="any"
                                                     value={ms.percentage}
+                                                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                                                     onChange={e => updateMilestone(index, 'percentage', e.target.value)}
                                                     onBlur={() => normalizePercentages(index)}
                                                     className="w-full text-sm border-gray-300 rounded"
@@ -523,8 +499,9 @@ export default function Index({ auth, projects = [], filters = {} }) {
                                                     type="number" 
                                                     required 
                                                     min="0"
-                                                    step="0.01" 
+                                                    step="any"
                                                     value={ms.amount} 
+                                                    onKeyDown={(e) => { if (e.key === '-' || e.key === 'e') e.preventDefault(); }}
                                                     onChange={e => updateMilestone(index, 'amount', e.target.value)}
                                                     onBlur={() => normalizePercentages(index)}
                                                     className="w-full text-sm border-gray-300 rounded" 
@@ -559,7 +536,17 @@ export default function Index({ auth, projects = [], filters = {} }) {
                                     ))}
                                 </div>
                             </div>
-                            <button type="submit" disabled={processing} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded text-lg shadow transition">{processing ? 'Guardando...' : 'Guardar Cambios'}</button>
+                            <button
+                                type="submit"
+                                disabled={processing || (data.milestones.length > 0 && !milestonesAreValid)}
+                                className={`w-full font-bold py-3 rounded text-lg shadow transition ${
+                                    processing || (data.milestones.length > 0 && !milestonesAreValid)
+                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                }`}
+                            >
+                                {processing ? 'Guardando...' : 'Guardar Cambios'}
+                            </button>
                         </form>
                     </div>
                 </div>

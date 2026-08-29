@@ -3,15 +3,31 @@ import { Head, useForm, router } from '@inertiajs/react';
 import { useState, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
+const resolveBoardTasks = (boardData) => (
+    Array.isArray(boardData?.tasks) ? boardData.tasks : []
+);
+
+const sameId = (a, b) => Number(a) === Number(b);
+
+const taskInCell = (task, rowId, colId) => (
+    sameId(task.board_row_id, rowId) && sameId(task.board_column_id, colId)
+);
+
 export default function Show({ auth, board }) {
-    const [localTasks, setLocalTasks] = useState(board.tasks || []);
+    const [localTasks, setLocalTasks] = useState(() => resolveBoardTasks(board));
     const [addingTask, setAddingTask] = useState({ rowId: null, colId: null });
     const [editingTask, setEditingTask] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
     const { data, setData, reset } = useForm({ title: '' });
 
-    useEffect(() => { setLocalTasks(board.tasks || []); }, [board.tasks]);
+    const syncTasksFromBoard = (boardData) => {
+        setLocalTasks(resolveBoardTasks(boardData));
+    };
+
+    useEffect(() => {
+        syncTasksFromBoard(board);
+    }, [board]);
 
     const filteredTasks = useMemo(() => {
         if (!searchTerm) return localTasks;
@@ -41,22 +57,29 @@ export default function Show({ auth, board }) {
         router.put(route('boards.task.move', draggableId), {
             row_id: destRowId, 
             column_id: destColId
-        }, { preserveScroll: true, onError: () => setLocalTasks(board.tasks) });
+        }, { preserveScroll: true, onError: () => syncTasksFromBoard(board) });
     };
 
     const handleAddTask = (e, rowId, colId) => {
         e.preventDefault();
         if (!data.title.trim()) { setAddingTask({rowId:null, colId:null}); return; }
-        
+
+        const title = data.title.trim();
+
         router.post(route('boards.task.store', board.id), {
-            title: data.title, 
-            row_id: rowId, 
+            title,
+            row_id: rowId,
             column_id: colId
-        }, { 
+        }, {
             preserveScroll: true,
-            onSuccess: () => { 
-                setAddingTask({rowId:null, colId:null}); 
-                reset(); 
+            onSuccess: (page) => {
+                setAddingTask({ rowId: null, colId: null });
+                reset();
+                syncTasksFromBoard(page.props.board);
+
+                if (!resolveBoardTasks(page.props.board).some((t) => t.title === title)) {
+                    router.reload({ only: ['board'], preserveScroll: true });
+                }
             },
             onError: (errors) => {
                 console.error('Error al crear tarea:', errors);
@@ -69,17 +92,23 @@ export default function Show({ auth, board }) {
         router.put(route('boards.task.update', editingTask.id), {
             title: editingTask.title, 
             description: editingTask.description
-        }, { 
-            preserveScroll: true, 
-            onSuccess: () => setEditingTask(null) 
+        }, {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                setEditingTask(null);
+                syncTasksFromBoard(page.props.board);
+            }
         });
     };
 
     const deleteTask = () => {
         if(!confirm('¿Borrar tarea?')) return;
         router.delete(route('boards.task.destroy', editingTask.id), {
-            preserveScroll: true, 
-            onSuccess: () => setEditingTask(null)
+            preserveScroll: true,
+            onSuccess: (page) => {
+                setEditingTask(null);
+                syncTasksFromBoard(page.props.board);
+            }
         });
     };
 
@@ -118,7 +147,7 @@ export default function Show({ auth, board }) {
                                 >
                                     {col.name} 
                                     <span className="absolute right-2 top-2 text-[10px] bg-gray-100 text-gray-600 px-1.5 rounded-full">
-                                        {filteredTasks.filter(t => t.board_column_id === col.id).length}
+                                        {filteredTasks.filter(t => sameId(t.board_column_id, col.id)).length}
                                     </span>
                                 </div>
                             ))}
@@ -135,8 +164,8 @@ export default function Show({ auth, board }) {
                                 </div>
 
                                 {board.columns.map(col => {
-                                    const cellTasks = filteredTasks.filter(t => t.board_row_id === row.id && t.board_column_id === col.id);
-                                    const isAdding = addingTask.rowId === row.id && addingTask.colId === col.id;
+                                    const cellTasks = filteredTasks.filter(t => taskInCell(t, row.id, col.id));
+                                    const isAdding = sameId(addingTask.rowId, row.id) && sameId(addingTask.colId, col.id);
                                     
                                     const droppableId = `${row.id}-${col.id}`;
 

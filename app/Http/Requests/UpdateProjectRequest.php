@@ -59,6 +59,7 @@ class UpdateProjectRequest extends FormRequest
         return [
             'milestones.*.percentage.min' => 'Cada porcentaje debe ser mayor o igual a 0.',
             'milestones.*.percentage.max' => 'Cada porcentaje no puede superar 100.',
+            'milestones.*.amount.min' => 'El monto en UF no puede ser negativo.',
         ];
     }
 }

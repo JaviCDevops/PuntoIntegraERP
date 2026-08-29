@@ -96,13 +96,19 @@ class QaBatch84Test extends TestCase
             'row_id' => $row->id,
         ]);
 
-        $response->assertRedirect();
+        $response->assertRedirect(route('boards.show', $board));
         $this->assertDatabaseHas('board_tasks', [
             'board_id' => $board->id,
             'board_column_id' => $column->id,
             'board_row_id' => $row->id,
             'title' => 'Nueva tarea QA',
         ]);
+
+        $showResponse = $this->actingAs($user)->get(route('boards.show', $board));
+        $showResponse->assertInertia(fn ($page) => $page
+            ->has('board.tasks', 1)
+            ->where('board.tasks.0.title', 'Nueva tarea QA')
+        );
     }
 
     public function test_project_update_rejects_milestones_not_summing_100(): void

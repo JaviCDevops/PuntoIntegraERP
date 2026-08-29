@@ -93,7 +93,7 @@ class BoardController extends Controller
         $board = Board::with([
             'columns' => fn ($q) => $q->orderBy('order_index'),
             'rows' => fn ($q) => $q->orderBy('order_index'),
-            'tasks.assignee',
+            'tasks' => fn ($q) => $q->orderBy('order_index')->with('assignee'),
             'members',
         ])->findOrFail($id);
 
@@ -128,8 +128,8 @@ class BoardController extends Controller
             )
             ->max('order_index');
 
-        // 3. Crear tarea
-        BoardTask::create([
+        // 3. Crear tarea (solo columnas existentes en BD; ver migración add_board_task_fields)
+        BoardTask::create(BoardTask::attributesForCreate([
             'board_id' => $board->id,
             'board_column_id' => $validated['column_id'],
             'board_row_id' => $validated['row_id'],
@@ -139,9 +139,11 @@ class BoardController extends Controller
             'due_date' => $validated['due_date'] ?? null,
             'priority' => $validated['priority'] ?? 'media',
             'assigned_to' => $validated['assigned_to'] ?? null,
-        ]);
+        ]));
 
-        return back()->with('success', 'Tarea creada exitosamente.');
+        return redirect()
+            ->route('boards.show', $board)
+            ->with('success', 'Tarea creada exitosamente.');
     }
 
     public function moveTask(Request $request, $id)
