@@ -23,7 +23,7 @@
     <p><strong>RUT:</strong> {{ $employee->formatted_rut ?: ($employee->rut ?? '-') }}</p>
     <p><strong>Tipo de solicitud:</strong> {{ ucfirst($leave->type) }}</p>
     <p><strong>Período:</strong> {{ $leave->start_date?->format('d/m/Y') ?? '-' }} ➜ {{ $leave->end_date?->format('d/m/Y') ?? '-' }}</p>
-    <p><strong>Días solicitados:</strong> {{ $leave->start_date && $leave->end_date ? $leave->start_date->diffInDays($leave->end_date) + 1 : 0 }}</p>
+    <p><strong>Días solicitados (hábiles):</strong> {{ $leave->days }}</p>
     <p><strong>Saldo de días disponible:</strong> {{ $employee->vacation_balance }} días</p>
 
     @if($leave->reason)

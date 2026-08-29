@@ -38,9 +38,23 @@ export default function Index({ auth, projects = [], filters = {} }) {
         return () => clearTimeout(delayDebounceFn);
     }, [searchCode, searchClient, searchStatus]);
 
-    const { data, setData, put, processing } = useForm({
+    const { data, setData, put, processing, errors } = useForm({
         oc_number: '', internal_notes: '', start_date: '', deadline: '', milestones: []
     });
+
+    const clampPercentage = (value) => {
+        const num = parseFloat(value);
+        if (Number.isNaN(num)) return 0;
+        return Math.max(0, Math.min(100, num));
+    };
+
+    const getMilestoneTotal = (milestones) =>
+        milestones.reduce((sum, ms) => sum + parseFloat(ms.percentage || 0), 0);
+
+    const syncMilestoneAmount = (milestone, totalProjectValue) => {
+        if (totalProjectValue <= 0) return milestone.amount || 0;
+        return (totalProjectValue * (parseFloat(milestone.percentage || 0) / 100)).toFixed(2);
+    };
 
     const formatDate = (dateString) => {
         if (!dateString) return '-';
@@ -111,52 +125,61 @@ export default function Index({ auth, projects = [], filters = {} }) {
 
     const updateMilestone = (index, field, value) => {
         const newMilestones = [...data.milestones];
-        newMilestones[index][field] = value;
-
-        // Marcar que este campo está siendo editado
-        setEditingMilestone({ index, field });
-
-        // Calcular el campo complementario (monto <-> porcentaje)
         const totalProjectValue = parseFloat(currentProject?.quote?.total_value || 0);
 
-        if (value && totalProjectValue > 0) {
-            if (field === 'percentage') {
-                if (editingMilestone?.index !== index || editingMilestone?.field !== 'amount') {
-                    newMilestones[index]['amount'] = (totalProjectValue * (value / 100)).toFixed(2);
-                }
-            } else if (field === 'amount') {
-                if (editingMilestone?.index !== index || editingMilestone?.field !== 'percentage') {
-                    newMilestones[index]['percentage'] = ((value / totalProjectValue) * 100).toFixed(2);
-                }
+        if (field === 'percentage') {
+            const clamped = clampPercentage(value);
+            newMilestones[index].percentage = clamped;
+            newMilestones[index].amount = syncMilestoneAmount(newMilestones[index], totalProjectValue);
+        } else if (field === 'amount') {
+            newMilestones[index].amount = value;
+            if (value && totalProjectValue > 0) {
+                newMilestones[index].percentage = clampPercentage(
+                    ((parseFloat(value) / totalProjectValue) * 100).toFixed(2)
+                );
             }
+        } else {
+            newMilestones[index][field] = value;
         }
 
+        setEditingMilestone({ index, field });
         setData('milestones', newMilestones);
     };
 
-    // Normaliza los porcentajes para que siempre sumen 100%,
-    // ajustando el último pago (o el primero si el último es el editado).
+    // Ajusta el hito "compañero" para que el total sea siempre 100%.
+    // Ej: si hay 2 pagos y el primero es 70%, el segundo queda en 30%.
     const normalizePercentages = (editedIndex) => {
         const newMilestones = [...data.milestones];
         const count = newMilestones.length;
-        if (count <= 1) return;
+        const totalProjectValue = parseFloat(currentProject?.quote?.total_value || 0);
 
-        const sumOthers = newMilestones.reduce((sum, ms, i) => sum + (i === editedIndex ? 0 : parseFloat(ms.percentage || 0)), 0);
+        if (count <= 1) {
+            newMilestones[0].percentage = 100;
+            newMilestones[0].amount = syncMilestoneAmount(newMilestones[0], totalProjectValue);
+            setData('milestones', newMilestones);
+            setEditingMilestone(null);
+            return;
+        }
+
+        const editedValue = clampPercentage(newMilestones[editedIndex].percentage);
+        newMilestones[editedIndex].percentage = editedValue;
+        newMilestones[editedIndex].amount = syncMilestoneAmount(newMilestones[editedIndex], totalProjectValue);
+
         let targetIndex = count - 1;
         if (editedIndex === targetIndex) {
             targetIndex = 0;
         }
 
-        let remaining = parseFloat((100 - sumOthers).toFixed(2));
-        // Asegurar que no sea negativo ni mayor a 100
+        const sumFixedOthers = newMilestones.reduce((sum, ms, i) => {
+            if (i === editedIndex || i === targetIndex) return sum;
+            return sum + clampPercentage(ms.percentage);
+        }, 0);
+
+        let remaining = parseFloat((100 - editedValue - sumFixedOthers).toFixed(2));
         remaining = Math.max(0, Math.min(100, remaining));
 
         newMilestones[targetIndex].percentage = remaining;
-
-        const totalProjectValue = parseFloat(currentProject?.quote?.total_value || 0);
-        if (totalProjectValue > 0) {
-            newMilestones[targetIndex].amount = (totalProjectValue * (remaining / 100)).toFixed(2);
-        }
+        newMilestones[targetIndex].amount = syncMilestoneAmount(newMilestones[targetIndex], totalProjectValue);
 
         setData('milestones', newMilestones);
         setEditingMilestone(null);
@@ -164,6 +187,13 @@ export default function Index({ auth, projects = [], filters = {} }) {
 
     const submit = (e) => {
         e.preventDefault();
+
+        const total = getMilestoneTotal(data.milestones);
+        if (data.milestones.length > 0 && Math.abs(total - 100) > 0.01) {
+            alert(`Los porcentajes deben sumar exactamente 100%. Actualmente suman ${total.toFixed(2)}%.`);
+            return;
+        }
+
         put(route('projects.update', currentProject.id), { onSuccess: () => setIsModalOpen(false) });
     };
 
@@ -458,6 +488,16 @@ export default function Index({ auth, projects = [], filters = {} }) {
                                     <span className="text-xs text-gray-400">(Reinicia los montos al cambiar)</span>
                                 </div>
                                 <div className="space-y-3">
+                                    {errors.milestones && (
+                                        <p className="text-sm text-red-600 font-semibold bg-red-50 border border-red-200 rounded p-2">
+                                            {errors.milestones}
+                                        </p>
+                                    )}
+                                    <div className="text-xs text-gray-500 text-right">
+                                        Total: <span className={`font-bold ${Math.abs(getMilestoneTotal(data.milestones) - 100) <= 0.01 ? 'text-green-600' : 'text-red-600'}`}>
+                                            {getMilestoneTotal(data.milestones).toFixed(2)}%
+                                        </span>
+                                    </div>
                                     {data.milestones.map((ms, index) => (
                                         <div key={index} className="flex items-end space-x-2 bg-gray-50 p-2 rounded border border-gray-200">
                                             <div className="w-16 font-bold text-blue-500 text-sm pb-2">Pago {index + 1}</div>
@@ -467,6 +507,9 @@ export default function Index({ auth, projects = [], filters = {} }) {
                                                 <input
                                                     type="number"
                                                     required
+                                                    min="0"
+                                                    max="100"
+                                                    step="0.01"
                                                     value={ms.percentage}
                                                     onChange={e => updateMilestone(index, 'percentage', e.target.value)}
                                                     onBlur={() => normalizePercentages(index)}
@@ -479,10 +522,11 @@ export default function Index({ auth, projects = [], filters = {} }) {
                                                 <input 
                                                     type="number" 
                                                     required 
+                                                    min="0"
                                                     step="0.01" 
                                                     value={ms.amount} 
                                                     onChange={e => updateMilestone(index, 'amount', e.target.value)}
-                                                    onBlur={() => setEditingMilestone(null)}
+                                                    onBlur={() => normalizePercentages(index)}
                                                     className="w-full text-sm border-gray-300 rounded" 
                                                 />
                                             </div>

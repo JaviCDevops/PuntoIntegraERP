@@ -39,4 +39,33 @@ class WorkingDaysService
 
         return $count;
     }
+
+    /**
+     * Cuenta días hábiles de un rango recortado a un periodo (ej. año calendario).
+     */
+    public function countWorkingDaysInRange(
+        Carbon $rangeStart,
+        Carbon $rangeEnd,
+        Carbon $periodStart,
+        Carbon $periodEnd
+    ): int {
+        $effectiveStart = $rangeStart->copy()->startOfDay();
+        $effectiveEnd = $rangeEnd->copy()->startOfDay();
+        $periodStart = $periodStart->copy()->startOfDay();
+        $periodEnd = $periodEnd->copy()->startOfDay();
+
+        if ($effectiveStart->lt($periodStart)) {
+            $effectiveStart = $periodStart->copy();
+        }
+
+        if ($effectiveEnd->gt($periodEnd)) {
+            $effectiveEnd = $periodEnd->copy();
+        }
+
+        if ($effectiveStart->gt($effectiveEnd)) {
+            return 0;
+        }
+
+        return $this->countWorkingDays($effectiveStart, $effectiveEnd);
+    }
 }

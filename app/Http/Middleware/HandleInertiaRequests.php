@@ -76,7 +76,9 @@ class HandleInertiaRequests extends Middleware
                         ->get();
                 
                     foreach ($deadlines as $p) {
-                        $days = now()->diffInDays($p->deadline);
+                        $days = max(0, (int) now()->startOfDay()->diffInDays(
+                            \Carbon\Carbon::parse($p->deadline)->startOfDay()
+                        ));
                         $alerts[] = [
                             'id' => 'exp_' . $p->id,
                             'type' => 'deadline', 

@@ -1,6 +1,9 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, Link } from '@inertiajs/react';
-import axios from 'axios'; // Necesario para consultar el RUT en vivo
+import { useState } from 'react';
+import axios from 'axios';
+import { generateCorporateEmail } from '@/utils/generateCorporateEmail';
+import { formatDateDisplay } from '@/utils/formatDate';
 
 export default function Create({ auth }) {
     const [emailManuallyEdited, setEmailManuallyEdited] = useState(false);
@@ -25,27 +28,20 @@ export default function Create({ auth }) {
     });
 
     // --- LÓGICA: GENERAR EMAIL SUGERIDO ---
-    const generateSuggestedEmail = (fullName) => {
-        if (!fullName || fullName.trim().length < 3) return '';
-        const parts = fullName.trim().split(/\s+/).filter(Boolean);
-        if (parts.length === 0) return '';
-
-        const firstName = parts[0];
-        const lastName = parts[parts.length - 1];
-        const prefix = parts.length === 1 ? firstName : firstName.charAt(0) + lastName;
-
-        const clean = prefix
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, '');
-
-        return `${clean}@puntointegra.cl`;
+    const handleNameChange = (fullName) => {
+        if (!emailManuallyEdited) {
+            setData({
+                name: fullName,
+                email: generateCorporateEmail(fullName) || '',
+            });
+        } else {
+            setData('name', fullName);
+        }
     };
 
     const handleNameBlur = () => {
-        if (!emailManuallyEdited && !data.email && data.name.trim()) {
-            setData('email', generateSuggestedEmail(data.name));
+        if (!emailManuallyEdited && data.name.trim()) {
+            setData('email', generateCorporateEmail(data.name));
         }
     };
 
@@ -133,7 +129,7 @@ export default function Create({ auth }) {
                                     <input
                                         type="text"
                                         value={data.name}
-                                        onChange={e => setData('name', e.target.value)}
+                                        onChange={e => handleNameChange(e.target.value)}
                                         onBlur={handleNameBlur}
                                         className="w-full rounded border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                         required
@@ -209,10 +205,16 @@ export default function Create({ auth }) {
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700">Fecha Contrato</label>
                                     <input type="date" lang="es-CL" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} className="w-full rounded border-gray-300 shadow-sm" />
+                                    {data.hire_date && (
+                                        <p className="text-xs text-gray-500 mt-1">Formato local: {formatDateDisplay(data.hire_date)}</p>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700">Nacimiento</label>
                                     <input type="date" lang="es-CL" value={data.birth_date} onChange={e => setData('birth_date', e.target.value)} className="w-full rounded border-gray-300 shadow-sm" />
+                                    {data.birth_date && (
+                                        <p className="text-xs text-gray-500 mt-1">Formato local: {formatDateDisplay(data.birth_date)}</p>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700">Teléfono</label>

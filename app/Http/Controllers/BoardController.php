@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Board;
 use App\Models\BoardTask;
+use App\Models\BoardTaskItem;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -90,13 +91,14 @@ class BoardController extends Controller
         }
 
         $board = Board::with([
-            'columns.tasks.assignee', // Cargamos tareas y responsable
-            'rows.tasks.assignee',
-            'members'
+            'columns' => fn ($q) => $q->orderBy('order_index'),
+            'rows' => fn ($q) => $q->orderBy('order_index'),
+            'tasks.assignee',
+            'members',
         ])->findOrFail($id);
 
         return Inertia::render('Boards/Show', [
-            'board' => $board
+            'board' => $board,
         ]);
     }
 
@@ -110,7 +112,7 @@ class BoardController extends Controller
         // 1. Validación estricta
         $validated = $request->validate([
             'column_id' => 'required|exists:board_columns,id',
-            'row_id' => 'nullable|exists:board_rows,id',
+            'row_id' => 'required|exists:board_rows,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'due_date' => 'nullable|date',
@@ -118,18 +120,22 @@ class BoardController extends Controller
             'assigned_to' => 'nullable|exists:users,id',
         ]);
 
-        // 2. Calcular orden para ponerla al final
+        // 2. Calcular orden para ponerla al final de la celda (fila + columna)
         $maxOrder = BoardTask::where('board_column_id', $validated['column_id'])
+            ->when(
+                isset($validated['row_id']),
+                fn ($q) => $q->where('board_row_id', $validated['row_id'])
+            )
             ->max('order_index');
 
         // 3. Crear tarea
         BoardTask::create([
             'board_id' => $board->id,
             'board_column_id' => $validated['column_id'],
-            'board_row_id' => $validated['row_id'] ?? null,
+            'board_row_id' => $validated['row_id'],
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
-            'order_index' => $maxOrder + 1,
+            'order_index' => ($maxOrder ?? 0) + 1,
             'due_date' => $validated['due_date'] ?? null,
             'priority' => $validated['priority'] ?? 'media',
             'assigned_to' => $validated['assigned_to'] ?? null,
@@ -287,5 +293,50 @@ class BoardController extends Controller
         $board->delete();
 
         return redirect()->route('boards.index')->with('success', 'Tablero eliminado correctamente.');
+    }
+
+    public function storeTaskItem(Request $request, BoardTask $task)
+    {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
+        $validated = $request->validate([
+            'content' => 'required|string|max:255',
+        ]);
+
+        $task->items()->create([
+            'content' => $validated['content'],
+            'is_completed' => false,
+        ]);
+
+        return back()->with('success', 'Subtarea creada.');
+    }
+
+    public function updateTaskItem(Request $request, BoardTaskItem $item)
+    {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
+        $validated = $request->validate([
+            'content' => 'nullable|string|max:255',
+            'is_completed' => 'nullable|boolean',
+        ]);
+
+        $item->update($validated);
+
+        return back();
+    }
+
+    public function destroyTaskItem(BoardTaskItem $item)
+    {
+        if (!auth()->user()->hasPermission('projects')) {
+            abort(403, 'No tienes permiso para acceder a este módulo.');
+        }
+
+        $item->delete();
+
+        return back()->with('success', 'Subtarea eliminada.');
     }
 }

@@ -19,7 +19,7 @@
         </strong>.
     </p>
 
-    <p><strong>Días considerados:</strong> {{ $leave->start_date && $leave->end_date ? $leave->start_date->diffInDays($leave->end_date) + 1 : 0 }}</p>
+    <p><strong>Días considerados (hábiles):</strong> {{ $leave->days }}</p>
 
     @if($leave->reason)
         <p><strong>Motivo registrado:</strong></p>

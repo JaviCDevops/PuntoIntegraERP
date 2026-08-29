@@ -2,7 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router, Link } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function Show({ auth, employee, canManageUsers, vacationPeriods = [] }) {
+export default function Show({ auth, employee, canManageUsers, vacationPeriods = [], currentVacationBalance }) {
     const [activeTab, setActiveTab] = useState('info');
 
     // --- FORMATO DE FECHA CONSISTENTE (Día/Mes/Año) ---
@@ -79,8 +79,8 @@ export default function Show({ auth, employee, canManageUsers, vacationPeriods =
                         <div className="flex items-center gap-6">
                             <div className="text-right">
                                 <div className="text-xs text-gray-500 uppercase tracking-wide font-bold">Saldo Vacaciones</div>
-                                <div className={`text-3xl font-bold ${employee.vacation_balance > 5 ? 'text-emerald-600' : 'text-orange-500'}`}>
-                                    {employee.vacation_balance} <span className="text-sm text-gray-400 font-normal">días</span>
+                                <div className={`text-3xl font-bold ${(currentVacationBalance ?? employee.vacation_balance) > 5 ? 'text-emerald-600' : 'text-orange-500'}`}>
+                                    {Number(currentVacationBalance ?? employee.vacation_balance).toFixed(1)} <span className="text-sm text-gray-400 font-normal">días hábiles</span>
                                 </div>
                             </div>
                             
@@ -190,6 +190,28 @@ export default function Show({ auth, employee, canManageUsers, vacationPeriods =
                         {/* --- TAB 2: VACACIONES (FUNCIONAL) --- */}
                         {activeTab === 'vacations' && (
                             <div className="space-y-6 animate-fade-in">
+                                {/* Informe de Vacaciones */}
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                    <div>
+                                        <h4 className="font-bold text-blue-900 text-lg flex items-center gap-2">
+                                            <span>📋</span> Informe de Vacaciones — Año {new Date().getFullYear()}
+                                        </h4>
+                                        <p className="text-sm text-blue-700 mt-1">
+                                            Saldo actual: <strong>{Number(currentVacationBalance ?? employee.vacation_balance).toFixed(1)} días hábiles</strong>
+                                            {' · '}Periodo calendario: 01/01/{new Date().getFullYear()} - 31/12/{new Date().getFullYear()}
+                                        </p>
+                                    </div>
+                                    <a
+                                        href={route('rrhh.vacations.pdf', employee.id)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-lg shadow transition text-sm"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                        Exportar a PDF
+                                    </a>
+                                </div>
+
                                 {/* Resumen por Periodo */}
                                 {vacationPeriods.length > 0 && (
                                     <div className="bg-white border border-blue-200 rounded-lg p-5 shadow-sm">
@@ -210,7 +232,7 @@ export default function Show({ auth, employee, canManageUsers, vacationPeriods =
                                                     {vacationPeriods.map((period, idx) => (
                                                         <tr key={idx} className={period.is_current ? 'bg-blue-50/50' : ''}>
                                                             <td className="px-4 py-3 text-gray-700">
-                                                                <span className="font-bold">Año {period.year_index}</span>
+                                                                <span className="font-bold">Año {period.year ?? period.year_index}</span>
                                                                 <span className="text-xs text-gray-500 ml-2">({period.period_start} - {period.period_end})</span>
                                                                 {period.is_current && <span className="ml-2 text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded">Actual</span>}
                                                             </td>
@@ -292,7 +314,7 @@ export default function Show({ auth, employee, canManageUsers, vacationPeriods =
                                                                 {formatDate(leave.start_date)} <span className="text-gray-400">➜</span> {formatDate(leave.end_date)}
                                                             </td>
                                                             <td className="px-4 py-3 text-center font-bold text-gray-700">
-                                                                {leave.days ?? '-'}
+                                                                {leave.days != null ? Math.round(leave.days) : '-'}
                                                             </td>
                                                             <td className="px-4 py-3 text-center">
                                                                 <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide

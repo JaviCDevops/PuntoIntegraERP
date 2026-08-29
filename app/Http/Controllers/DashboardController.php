@@ -79,7 +79,9 @@ class DashboardController extends Controller
                     'id' => $p->id,
                     'title' => $p->code . ' - ' . $clienteNombre,
                     'deadline' => Carbon::parse($p->deadline)->format('d/m/Y'),
-                    'days_diff' => Carbon::now()->diffInDays($p->deadline, false),
+                    'days_diff' => max(0, (int) Carbon::now()->startOfDay()->diffInDays(
+                        Carbon::parse($p->deadline)->startOfDay()
+                    )),
                 ];
             });
 

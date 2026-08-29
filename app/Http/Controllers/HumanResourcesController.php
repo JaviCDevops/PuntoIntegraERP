@@ -12,8 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
-use Carbon\Carbon;
-use App\Services\WorkingDaysService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\VacationService;
 
 class HumanResourcesController extends Controller
 {
@@ -93,13 +93,46 @@ class HumanResourcesController extends Controller
             'leaves' => fn ($query) => $query->latest('start_date'),
         ])->append('vacation_balance');
 
-        $vacationPeriods = $this->getVacationPeriods($employee);
+        $vacationPeriods = app(VacationService::class)->getCalendarYearPeriods($employee);
 
         return Inertia::render('RRHH/Show', [
             'employee' => $employee,
             'vacationPeriods' => $vacationPeriods,
+            'currentVacationBalance' => app(VacationService::class)->getCurrentYearBalance($employee),
             'canManageUsers' => $user->hasPermission('manage_users'),
         ]);
+    }
+
+    public function exportVacationsPdf(Employee $employee)
+    {
+        $user = auth()->user();
+
+        if (!$user->hasPermission('rrhh') && !$user->hasPermission('manage_users')) {
+            abort(403, 'No tienes acceso al módulo de RRHH.');
+        }
+
+        if (!$user->hasPermission('manage_users') && (!$user->employee || $user->employee->id !== $employee->id)) {
+            abort(403, 'No tienes permiso para exportar este informe.');
+        }
+
+        $employee->load(['user', 'leaves' => fn ($q) => $q->latest('start_date')]);
+        $employee->append('formatted_rut');
+
+        $vacationService = app(VacationService::class);
+        $vacationPeriods = $vacationService->getCalendarYearPeriods($employee);
+        $currentBalance = $vacationService->getCurrentYearBalance($employee);
+        $vacationLeaves = $employee->leaves->where('type', 'vacaciones');
+
+        $pdf = Pdf::loadView('pdf.vacations', compact(
+            'employee',
+            'vacationPeriods',
+            'currentBalance',
+            'vacationLeaves'
+        ));
+
+        $fileName = 'Informe_Vacaciones_' . str_replace(' ', '_', $employee->user->name) . '.pdf';
+
+        return $pdf->stream($fileName);
     }
 
     public function storeLeave(Request $request)
@@ -254,63 +287,5 @@ class HumanResourcesController extends Controller
         }
 
         Mail::to($employeeEmail)->send(new LeaveRequestStatusMail($leave));
-    }
-
-    /**
-     * Calcula los periodos anuales de vacaciones desde la fecha de contrato.
-     * Cada periodo comienza en el aniversario de contratación.
-     */
-    private function getVacationPeriods(Employee $employee): array
-    {
-        if (!$employee->hire_date) {
-            return [];
-        }
-
-        $workingDaysSvc = new WorkingDaysService();
-        $hireDate = $employee->hire_date->copy()->startOfDay();
-        $now = Carbon::now()->startOfDay();
-        $periods = [];
-        $yearIndex = 0;
-
-        while (true) {
-            $periodStart = $hireDate->copy()->addYears($yearIndex);
-            $periodEnd = $hireDate->copy()->addYears($yearIndex + 1)->subDay()->endOfDay();
-
-            if ($periodStart->greaterThan($now)) {
-                break;
-            }
-
-            $taken = $employee->leaves()
-                ->where('type', 'vacaciones')
-                ->where('status', 'aprobada')
-                ->whereDate('start_date', '>=', $periodStart)
-                ->whereDate('start_date', '<=', $periodEnd)
-                ->get()
-                ->sum(function ($leave) use ($workingDaysSvc) {
-                    return $workingDaysSvc->countWorkingDays(
-                        Carbon::parse($leave->start_date),
-                        Carbon::parse($leave->end_date)
-                    );
-                });
-
-            $periods[] = [
-                'year_index' => $yearIndex + 1,
-                'period_start' => $periodStart->format('d/m/Y'),
-                'period_end' => $periodEnd->format('d/m/Y'),
-                'earned' => 15,
-                'taken' => $taken,
-                'balance' => 15 - $taken,
-                'is_current' => $now->between($periodStart, $periodEnd),
-            ];
-
-            $yearIndex++;
-
-            // Límite de seguridad para evitar bucles infinitos
-            if ($yearIndex > 50) {
-                break;
-            }
-        }
-
-        return $periods;
     }
 }

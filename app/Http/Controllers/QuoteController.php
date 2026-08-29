@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreQuoteRequest;
+use App\Http\Requests\UpdateQuoteRequest;
 use App\Models\Area;
 use App\Models\Client;
 use App\Models\Quote;
@@ -78,21 +80,9 @@ class QuoteController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreQuoteRequest $request)
     {
-        // Verificar permiso para crear cotizaciones
-        if (!auth()->user()->hasPermission('quotes')) {
-            abort(403, 'No tienes permiso para crear cotizaciones.');
-        }
-
-        $validated = $request->validate([
-            'client_id' => 'required|exists:clients,id',
-            'area' => 'required|string|exists:areas,name', 
-            'description' => 'nullable|string|max:255',
-            'net_value' => 'required|numeric|min:0',
-            'valid_until' => 'required|date|after:today',     
-            'reminder_date' => 'nullable|date|before_or_equal:valid_until',
-        ]);
+        $validated = $request->validated();
 
         $client = Client::findOrFail($validated['client_id']);
 
@@ -257,21 +247,13 @@ class QuoteController extends Controller
         ]);
     }
 
-    public function update(Request $request, Quote $quote)
+    public function update(UpdateQuoteRequest $request, Quote $quote)
     {
-        // Verificar permiso para actualizar cotizaciones
-        if (!auth()->user()->hasPermission('quotes')) {
-            abort(403, 'No tienes permiso para actualizar cotizaciones.');
+        if ($quote->status === 'adjudicada' || $quote->status === 'perdida') {
+            return redirect()->route('quotes.index')->with('error', 'No se pueden editar cotizaciones cerradas.');
         }
 
-        $validated = $request->validate([
-            'client_id' => 'required|exists:clients,id',
-            'area' => 'required|string|exists:areas,name',
-            'description' => 'nullable|string',
-            'net_value' => 'required|numeric|min:0',
-            'valid_until' => 'required|date',
-            'reminder_date' => 'nullable|date|before_or_equal:valid_until',
-        ]);
+        $validated = $request->validated();
 
         $net = $validated['net_value'];
         $tax = $net * 0.19;

@@ -53,10 +53,14 @@ export default function Show({ auth, board }) {
             row_id: rowId, 
             column_id: colId
         }, { 
+            preserveScroll: true,
             onSuccess: () => { 
                 setAddingTask({rowId:null, colId:null}); 
                 reset(); 
-            } 
+            },
+            onError: (errors) => {
+                console.error('Error al crear tarea:', errors);
+            }
         });
     };
 
@@ -83,7 +87,7 @@ export default function Show({ auth, board }) {
         <AuthenticatedLayout user={auth.user} header={
             <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-2">
-                    <h2 className="text-2xl font-bold text-gray-800">{board.name}</h2>
+                    <h2 className="text-2xl font-bold text-gray-800">{board.title || board.name}</h2>
                     <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded uppercase">Vista Matriz</span>
                 </div>
                 <input 
@@ -95,7 +99,7 @@ export default function Show({ auth, board }) {
                 />
             </div>
         }>
-            <Head title={board.name} />
+            <Head title={board.title || board.name} />
             
             <DragDropContext onDragEnd={onDragEnd}>
                 <div className="p-6 h-[calc(100vh-100px)] overflow-auto bg-gray-100">

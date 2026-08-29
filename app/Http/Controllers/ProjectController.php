@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
-use App\Models\Area; 
+use App\Models\Area;
+use App\Http\Requests\UpdateProjectRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -39,53 +40,18 @@ class ProjectController extends Controller
         ]);
     }
 
-    public function update(Request $request, Project $project)
+    public function update(UpdateProjectRequest $request, Project $project)
     {
-        // Verificar permiso para actualizar proyectos
-        if (!auth()->user()->hasPermission('projects')) {
-            abort(403, 'No tienes permiso para actualizar proyectos.');
-        }
-
-        $data = $request->validate([
-            'oc_number' => 'nullable|string|max:255',
-            'internal_notes' => 'nullable|string',
-            'start_date' => 'nullable|date',
-            'deadline' => 'nullable|date',
-            'area_id' => 'nullable|exists:areas,id', 
-            'reminder_date' => 'nullable|date',
-            'expiration_date' => 'nullable|date',
-            'status' => 'nullable|string',
-            
-            'milestones' => 'nullable|array',
-            'milestones.*.id' => 'nullable|integer',
-            'milestones.*.milestone_order' => 'required|integer',
-            
-            'milestones.*.percentage' => 'required|numeric|min:0|max:100', 
-            
-            'milestones.*.amount' => 'nullable|numeric',
-            'milestones.*.status' => 'nullable|string',
-            'milestones.*.invoice_number' => 'nullable|string',
-        ]);
-
-        if ($request->has('milestones') && count($request->milestones) > 0) {
-            $totalPercentage = collect($request->milestones)->sum('percentage');
-
-            if ($totalPercentage != 100) {
-                return back()->withErrors([
-                    'milestones' => "La suma total de los porcentajes debe ser exactamente 100%. Actualmente suma: {$totalPercentage}%"
-                ])->withInput(); 
-            }
-        }
-
+        $data = $request->validated();
 
         $milestonesData = $data['milestones'] ?? [];
-        unset($data['milestones']); 
+        unset($data['milestones']);
 
         $project->update($data);
 
         if ($request->has('milestones')) {
             $incomingIds = collect($milestonesData)->pluck('id')->filter()->toArray();
-        
+
             $project->milestones()->whereNotIn('id', $incomingIds)->delete();
 
             foreach ($milestonesData as $milestone) {

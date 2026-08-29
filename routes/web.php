@@ -65,11 +65,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Recursos Humanos (RRHH)
     Route::prefix('rrhh')->name('rrhh.')->group(function () {
         Route::get('/', [HumanResourcesController::class, 'index'])->name('index');
-        Route::get('/create', [HumanResourcesController::class, 'create'])->name('create');
-        Route::post('/', [HumanResourcesController::class, 'store'])->name('store');
+        Route::get('/{employee}/vacations/pdf', [HumanResourcesController::class, 'exportVacationsPdf'])->name('vacations.pdf');
         Route::get('/{employee}', [HumanResourcesController::class, 'show'])->name('show');
-        Route::put('/{employee}', [HumanResourcesController::class, 'update'])->name('update');
-        Route::delete('/{employee}', [HumanResourcesController::class, 'destroy'])->name('destroy');
         
         // Gestión Interna RRHH
         Route::post('/leaves', [HumanResourcesController::class, 'storeLeave'])->name('leaves.store');

@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use App\Services\WorkingDaysService;
+use App\Services\VacationService;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 class Employee extends Model
 {
@@ -28,27 +27,7 @@ class Employee extends Model
 
     public function getVacationBalanceAttribute()
     {
-        if (!$this->hire_date) return 0;
-
-        // Se usan meses completos trabajados para evitar discrepancias de días.
-        $monthsWorked = floor($this->hire_date->diffInMonths(now()));
-
-        $totalAccrued = $monthsWorked * 1.25;
-
-        $workingDaysSvc = new WorkingDaysService();
-
-        $daysTaken = $this->leaves()
-            ->where('type', 'vacaciones')
-            ->where('status', 'aprobada')
-            ->get()
-            ->sum(function ($leave) use ($workingDaysSvc) {
-                return $workingDaysSvc->countWorkingDays(
-                    Carbon::parse($leave->start_date),
-                    Carbon::parse($leave->end_date)
-                );
-            });
-
-        return round($totalAccrued - $daysTaken, 2);
+        return app(VacationService::class)->getCurrentYearBalance($this);
     }
 
     public function getFormattedRutAttribute(): string

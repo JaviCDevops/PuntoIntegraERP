@@ -1,5 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, Link } from '@inertiajs/react';
+import { formatDateDisplay } from '@/utils/formatDate';
 
 export default function Edit({ auth, user }) {
     // 1. Inicializamos el formulario con los datos del Usuario Y del Empleado (si existe)
@@ -159,11 +160,17 @@ export default function Edit({ auth, user }) {
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700">Fecha de Contrato</label>
                                     <input type="date" lang="es-CL" value={data.hire_date} onChange={e => setData('hire_date', e.target.value)} className="w-full rounded border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" />
+                                    {data.hire_date && (
+                                        <p className="text-xs text-gray-500 mt-1">Formato local: {formatDateDisplay(data.hire_date)}</p>
+                                    )}
                                     {errors.hire_date && <div className="text-red-500 text-xs mt-1">{errors.hire_date}</div>}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700">Fecha de Nacimiento</label>
                                     <input type="date" lang="es-CL" value={data.birth_date} onChange={e => setData('birth_date', e.target.value)} className="w-full rounded border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" />
+                                    {data.birth_date && (
+                                        <p className="text-xs text-gray-500 mt-1">Formato local: {formatDateDisplay(data.birth_date)}</p>
+                                    )}
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-bold text-gray-700">Dirección</label>

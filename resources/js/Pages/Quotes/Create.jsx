@@ -168,8 +168,14 @@ export default function Create({ auth, clients, areas }) {
                                                 <input
                                                     type="number"
                                                     step="0.01"
+                                                    min="0"
                                                     value={data.net_value}
-                                                    onChange={(e) => setData('net_value', e.target.value)}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value;
+                                                        if (value === '' || parseFloat(value) >= 0) {
+                                                            setData('net_value', value);
+                                                        }
+                                                    }}
                                                     className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-indigo-500 focus:ring-indigo-500 font-mono text-lg"
                                                     placeholder="0.00"
                                                 />
